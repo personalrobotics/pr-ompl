@@ -57,6 +57,11 @@ namespace pr_ompl {
 class RRTConnect : public ompl::base::Planner
 {
 public:
+    enum ExtensionType
+    {
+        EXTTYPE_EXTEND,
+        EXTTYPE_CONNECT
+    };
 
     /** \brief Constructor */
     RRTConnect(const ompl::base::SpaceInformationPtr &si);
@@ -84,21 +89,16 @@ public:
     {
         return maxDistance_;
     }
-    
-    enum ExtensionType
+
+    void setExtensionTypes(
+        std::pair<enum ExtensionType, enum ExtensionType> const &extension_types)
     {
-       EXTTYPE_EXTEND,
-       EXTTYPE_CONNECT
-    };
-    
-    void setExtensionTypes(std::pair<enum ExtensionType,enum ExtensionType> types)
-    {
-       ext_types_ = types;
+        ext_types_ = extension_types;
     }
-    
-    std::pair<enum ExtensionType,enum ExtensionType> getExtensionTypes(void) const
+
+    std::pair<enum ExtensionType, enum ExtensionType> getExtensionTypes()
     {
-       return ext_types_;
+        return ext_types_;
     }
 
     /** \brief Set a different nearest neighbors datastructure */
@@ -112,6 +112,10 @@ public:
     virtual void setup(void);
 
 protected:
+    void setExtensionTypesString(std::string const &str);
+
+    std::string getExtensionTypesString() const;
+    std::string getExtensionTypeString(enum ExtensionType extension_type) const;
 
     /** \brief Representation of a motion */
     class Motion

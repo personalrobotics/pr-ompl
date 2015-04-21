@@ -49,13 +49,69 @@ pr_ompl::RRTConnect::RRTConnect(const base::SpaceInformationPtr &si) : base::Pla
     maxDistance_ = 0.0;
     ext_types_ = std::make_pair(EXTTYPE_EXTEND, EXTTYPE_CONNECT);
 
-    Planner::declareParam<double>("range", this, &RRTConnect::setRange, &RRTConnect::getRange, "0.:1.:10000.");
+    Planner::declareParam<double>("range", this,
+        &RRTConnect::setRange,
+        &RRTConnect::getRange,
+        "0.:1.:10000."
+    );
+    Planner::declareParam<std::string>("extension_type", this,
+        &RRTConnect::setExtensionTypesString,
+        &RRTConnect::getExtensionTypesString,
+        "con-con,con-ext,ext-con,ext-ext"
+    );
     connectionPoint_ = std::make_pair<base::State*, base::State*>(NULL, NULL);
 }
 
 pr_ompl::RRTConnect::~RRTConnect(void)
 {
     freeMemory();
+}
+
+void pr_ompl::RRTConnect::setExtensionTypesString(std::string const &str)
+{
+    std::pair<enum ExtensionType,
+              enum ExtensionType> extension_types;
+
+    if (str == "con-con")
+    {
+        ext_types_ = std::make_pair(EXTTYPE_CONNECT, EXTTYPE_CONNECT);
+    }
+    else if (str == "con-ext")
+    {
+        ext_types_ = std::make_pair(EXTTYPE_CONNECT, EXTTYPE_EXTEND);
+    }
+    else if (str == "ext-con")
+    {
+        ext_types_ = std::make_pair(EXTTYPE_EXTEND, EXTTYPE_CONNECT);
+    } else if (str == "ext-ext") {
+        ext_types_ = std::make_pair(EXTTYPE_EXTEND, EXTTYPE_EXTEND);
+    } else {
+        throw std::runtime_error("Invalid extension type string.");
+    }
+}
+
+std::string pr_ompl::RRTConnect::getExtensionTypesString() const
+{
+    std::stringstream ss;
+    ss << getExtensionTypeString(ext_types_.first)
+       << "-"
+       << getExtensionTypeString(ext_types_.second);
+    return ss.str();
+}
+
+std::string pr_ompl::RRTConnect::getExtensionTypeString(
+    enum ExtensionType extension_type) const
+{
+    switch (extension_type) {
+    case EXTTYPE_CONNECT:
+        return "con";
+
+    case EXTTYPE_EXTEND:
+        return "ext";
+
+    default:
+        throw std::runtime_error("Unknown extension type.");
+    }
 }
 
 void pr_ompl::RRTConnect::setup(void)
