@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pr_ompl</name>
+  <version>0.0.0</version>
+  <description>
+    OMPL planenrs developed by the Personal Robotics Lab at CMU.
+  </description>
+  <maintainer email="cdellin@cs.cmu.edu">Chris Dellin</maintainer>
+  <author email="cdellin@cs.cmu.edu">Chris Dellin</author>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>ompl</depend>
+</package>
