@@ -5,8 +5,8 @@
   <description>
     OMPL planenrs developed by the Personal Robotics Lab at CMU.
   </description>
-  <maintainer email="cdellin@cs.cmu.edu">Chris Dellin</maintainer>
-  <author email="cdellin@cs.cmu.edu">Chris Dellin</author>
+  <maintainer email="cdellin@gmail.com">Chris Dellin</maintainer>
+  <author email="cdellin@gmail.com">Chris Dellin</author>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
   <depend>ompl</depend>

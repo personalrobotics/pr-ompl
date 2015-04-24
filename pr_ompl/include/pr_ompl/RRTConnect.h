@@ -34,6 +34,14 @@
 
 /* Author: Ioan Sucan */
 
+/* Modifications to support:
+ * - different extension types (e.g. EXTEND and CONNECT)
+ * 
+ * Author: Chris Dellin <cdellin@gmail.com>
+ * Copyright: 2015 Carnegie Mellon University
+ * License: BSD
+ */
+
 #ifndef PR_OMPL_RRT_CONNECT_H_
 #define PR_OMPL_RRT_CONNECT_H_
 

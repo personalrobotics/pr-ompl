@@ -34,6 +34,14 @@
 
 /* Author: Ioan Sucan */
 
+/* Modifications to support:
+ * - different extension types (e.g. EXTEND and CONNECT)
+ * 
+ * Author: Chris Dellin <cdellin@gmail.com>
+ * Copyright: 2015 Carnegie Mellon University
+ * License: BSD
+ */
+
 #include <pr_ompl/RRTConnect.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/tools/config/SelfConfig.h>
