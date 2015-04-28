@@ -4,7 +4,6 @@ project(or_pr_ompl)
 # TODO: cmake_modules is only required to find Eigen
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
-  ompl
   or_ompl
   pr_ompl
   openrave_catkin
@@ -12,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 # TODO: Eigen is a transitive dependency of or_ompl.
 find_package(Eigen REQUIRED)
-find_package(ompl REQUIRED)
+find_package(OMPL REQUIRED)
 
 catkin_package(
 #  INCLUDE_DIRS

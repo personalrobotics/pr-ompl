@@ -6,7 +6,7 @@ find_package(OMPL REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES pr_ompl
+  LIBRARIES ${PROJECT_NAME}_rrtconnect
 #  CATKIN_DEPENDS other_catkin_pkg
   DEPENDS OMPL
 )
