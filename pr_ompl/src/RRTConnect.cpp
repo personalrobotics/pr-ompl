@@ -281,23 +281,6 @@ ompl::base::PlannerStatus pr_ompl::RRTConnect::solve(const base::PlannerTerminat
         startTree = !startTree;
         TreeData &otherTree = startTree ? tStart_ : tGoal_;
 
-        // if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
-        // {
-        //     const base::State *st = tGoal_->size() == 0 ? pis_.nextGoal(ptc) : pis_.nextGoal();
-        //     if (st)
-        //     {
-        //         Motion* motion = new Motion(si_);
-        //         si_->copyState(motion->state, st);
-        //         motion->root = motion->state;
-        //         tGoal_->add(motion);
-        //     }
-
-        //     if (tGoal_->size() == 0)
-        //     {
-        //         OMPL_ERROR("Unable to sample any valid states for goal tree");
-        //         break;
-        //     }
-        // }
 
         /* Sample random number in [0,1] to determine if goal sampling needed */
         double goalSampleDraw = dis(gen);
