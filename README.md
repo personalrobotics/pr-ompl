@@ -8,7 +8,7 @@ Currently, this consists of LRAstar which encapsulates both LWAstar[Cohen et.al.
 
 Once these planners are well-tested, we intend to submit them upstream.
 
-## Note: This requires considerable restructuring to cleanly accomodate different planners.
+#### Note: This requires considerable restructuring to cleanly accomodate different planners.
 
 [pr]: https://personalrobotics.ri.cmu.edu/
 [ompl]: http://ompl.kavrakilab.org/
