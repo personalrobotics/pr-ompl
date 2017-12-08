@@ -129,13 +129,8 @@ class RoadmapFromFile
       std::string _filename)
     : mSpace(_space)
     , mFilename(_filename)
-    , mBounds(0)
     {
-      if (mSpace->getType() != ompl::base::STATE_SPACE_REAL_VECTOR)
-        throw std::runtime_error("This only supports real vector state spaces!");
-      
       mDim = mSpace->getDimension();
-      mBounds = mSpace->as<ompl::base::RealVectorStateSpace>()->getBounds();
     }
 
     ~RoadmapFromFile() {}
@@ -162,7 +157,6 @@ class RoadmapFromFile
 
   private:
     size_t mDim;
-    ompl::base::RealVectorBounds mBounds;
     const ompl::base::StateSpacePtr mSpace;
 };
 

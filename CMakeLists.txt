@@ -1,21 +1,27 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.3)
 project(pr-ompl)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-find_package(catkin REQUIRED)
-catkin_metapackage()
-
-# ===============================================================================
-# Dependencies
-#
-
-find_package(Boost COMPONENTS REQUIRED program_options filesystem graph system)
+find_package(catkin REQUIRED
+  COMPONENTS
+  cmake_modules)
 find_package(OMPL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options system)
+
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  DEPENDS Boost
+)
 
 include_directories(
-  ${catkin_INCLUDE_DIR}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
-  ${OMPL_INCLUDE_DIR}
+)
+
+link_directories(
+  ${catkin_LIBRARY_DIRS}
 )
 
 link_libraries(
@@ -24,45 +30,38 @@ link_libraries(
   ${Boost_LIBRARIES}
 )
 
-link_directories(
-  ${catkin_LIBRARY_DIRS}
+add_library(${PROJECT_NAME}
+  src/LRAstar.cpp
 )
-# ===============================================================================
-# Planners
-#
 
-add_subdirectory(LRAstar)
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-# ===============================================================================
-# Formatting
-#
+#================================================================================
+# Installation
 
-find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format-3.8)
+  install(TARGETS pr-ompl EXPORT pr-omplConfig
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    )
 
-if(CLANG_FORMAT_EXECUTABLE)
-  message(STATUS "Found clang-format.")
+  install(DIRECTORY include/ DESTINATION include)
 
-  file(GLOB_RECURSE ALL_SOURCE_FILES
-    LIST_DIRECTORIES false
-    soda_handoff/src/*.cpp)
-  list(LENGTH ALL_SOURCE_FILES NUM_SOURCE_FILES)
+  # This makes the project importable from the install directory
+  install(EXPORT pr-omplConfig DESTINATION share/pr-ompl/cmake)
 
-  add_custom_target(format
-    COMMAND ${CMAKE_COMMAND} -E echo "Formatting ${NUM_SOURCE_FILES} files..."
-    COMMAND ${CLANG_FORMAT_EXECUTABLE} -style=file -i ${ALL_SOURCE_FILES}
-    COMMAND ${CMAKE_COMMAND} -E echo "Done."
-    DEPENDS ${CLANG_FORMAT_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  # This makes the project importable from the build directory
+  export(TARGETS pr-ompl FILE pr-omplConfig.cmake)
 
-  add_custom_target(check-format
-    COMMAND ${CMAKE_COMMAND} -E echo "Checking code style of"
-            "${NUM_SOURCE_FILES} files... "
-    COMMAND ${CMAKE_SOURCE_DIR}/tools/check_format.sh
-            ${CLANG_FORMAT_EXECUTABLE} ${ALL_SOURCE_FILES}
-    COMMAND ${CMAKE_COMMAND} -E echo "Done."
-    DEPENDS ${CLANG_FORMAT_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-else()
-  message(STATUS "Could not find clang-format. Please install "
-      "clang-format to enable automatic code formatting.")
-endif()
+  # Install the package.xml file (to satisfy REP-136).
+  install(FILES "package.xml"
+    DESTINATION "share/pr-ompl")
+
+# This custom target doesn't affect on building aikido projects but is only for
+# displaying the header files in IDEs.
+FILE(GLOB_RECURSE aikido_headers "include/*.hpp")
+add_custom_target(headers SOURCES ${aikido_headers})

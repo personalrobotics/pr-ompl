@@ -145,6 +145,7 @@ namespace LRAstar {
 
     // OMPL required methods
     void setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef);
+    ompl::base::PlannerStatus solve(double solveTime);
     ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition &ptc);
     void setup();
     ompl::base::PathPtr constructSolution(const Vertex &start, const Vertex &goal);

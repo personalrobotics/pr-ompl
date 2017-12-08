@@ -41,7 +41,7 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si,
   , mRoadmapFileName(_roadmapFileName)
   , mLookahead(_lookahead)
   , mGreediness(_greediness)
-  , mConnectionRadius(0.4*mSpace->getLongestValidSegmentLength())
+  , mConnectionRadius(1.0)
   , mBestPathCost(std::numeric_limits<double>::infinity())
   , mCheckRadius(0.5*mSpace->getLongestValidSegmentLength())
   , mNumEdgeEvals(0u)
@@ -776,66 +776,13 @@ bool LRAstar::evaluatePath(std::vector<Vertex> path, TG &qUpdate, TG &qRewire, T
 void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
   ompl::base::Planner::setProblemDefinition(pdef);
-
-  StateWrapperPtr startState(new StateWrapper(mSpace));
-  mSpace->copyState(startState->state, pdef_->getStartState(0));
-
-  StateWrapperPtr goalState(new StateWrapper(mSpace));
-  mSpace->copyState(goalState->state, pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
-
-  auto validityChecker = si_->getStateValidityChecker();
-
-  if(!validityChecker->isValid(startState->state))
-    throw ompl::Exception("Start configuration is in collision!");
-  if(!validityChecker->isValid(goalState->state))
-    throw ompl::Exception("Goal configuration is in collision!");
-
-  // Add start and goal vertices to the graph
-  mStartVertex = boost::add_vertex(g);
-  g[mStartVertex].v_state = startState;
-  g[mStartVertex].vertexStatus = CollisionStatus::FREE;
-  g[mStartVertex].visited = false;
-  Node* nodeS = new Node();
-  g[mStartVertex].node = *nodeS;
-
-  mGoalVertex = boost::add_vertex(g);
-  g[mGoalVertex].v_state = goalState;
-  g[mGoalVertex].vertexStatus = CollisionStatus::FREE;
-  g[mGoalVertex].visited = false;
-  Node* nodeG = new Node();
-  g[mGoalVertex].node = *nodeG;
-
-  VertexIter vi, vi_end;
-  for (boost::tie(vi, vi_end) = vertices(g); vi != vi_end; ++vi)
-  {
-    double startDist = mSpace->distance(g[*vi].v_state->state, startState->state);
-    double goalDist  = mSpace->distance(g[*vi].v_state->state, goalState->state);
-
-    if (startDist < mConnectionRadius)
-    {
-      if(mStartVertex == *vi)
-        continue;
-      std::pair<LRAstar::Edge,bool> newEdge = boost::add_edge(mStartVertex, *vi, g);
-      g[newEdge.first].length = startDist;
-      g[newEdge.first].edgeStatus = CollisionStatus::FREE;
-      initializeEdgePoints(newEdge.first);
-    }
-    if (goalDist < mConnectionRadius)
-    {
-      if(mGoalVertex == *vi)
-        continue;
-      std::pair<LRAstar::Edge,bool> newEdge = boost::add_edge(mGoalVertex, *vi, g);
-      g[newEdge.first].length = goalDist;
-      g[newEdge.first].edgeStatus = CollisionStatus::FREE;
-      initializeEdgePoints(newEdge.first);
-    }
-  }
 }
 
 void LRAstar::setup()
 {
   ompl::base::Planner::setup();
 
+  // Extract information from the graph file
   if(mRoadmapFileName == "")
     throw ompl::Exception("Roadmap name must be set!");
 
@@ -867,11 +814,63 @@ void LRAstar::setup()
     edgeStatusMap[*ei] = CollisionStatus::FREE;
     initializeEdgePoints(*ei);
   }
+
+  // Add start and goal vertices to the graph
+  StateWrapperPtr startState(new StateWrapper(mSpace));
+  mSpace->copyState(startState->state, pdef_->getStartState(0));
+
+  StateWrapperPtr goalState(new StateWrapper(mSpace));
+  mSpace->copyState(goalState->state, pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
+
+  auto validityChecker = si_->getStateValidityChecker();
+
+  if(!validityChecker->isValid(startState->state))
+    throw ompl::Exception("Start configuration is in collision!");
+  if(!validityChecker->isValid(goalState->state))
+    throw ompl::Exception("Goal configuration is in collision!");
+
+  mStartVertex = boost::add_vertex(g);
+  g[mStartVertex].v_state = startState;
+  g[mStartVertex].vertexStatus = CollisionStatus::FREE;
+  g[mStartVertex].visited = false;
+  Node* nodeS = new Node();
+  g[mStartVertex].node = *nodeS;
+
+  mGoalVertex = boost::add_vertex(g);
+  g[mGoalVertex].v_state = goalState;
+  g[mGoalVertex].vertexStatus = CollisionStatus::FREE;
+  g[mGoalVertex].visited = false;
+  Node* nodeG = new Node();
+  g[mGoalVertex].node = *nodeG;
+
+  for (boost::tie(vi, vi_end) = vertices(g); vi != vi_end; ++vi)
+  {
+    double startDist = mSpace->distance(g[*vi].v_state->state, startState->state);
+    double goalDist  = mSpace->distance(g[*vi].v_state->state, goalState->state);
+
+    if (startDist < mConnectionRadius)
+    {
+      if(mStartVertex == *vi)
+        continue;
+      std::pair<LRAstar::Edge,bool> newEdge = boost::add_edge(mStartVertex, *vi, g);
+      g[newEdge.first].length = startDist;
+      g[newEdge.first].edgeStatus = CollisionStatus::FREE;
+      initializeEdgePoints(newEdge.first);
+    }
+    if (goalDist < mConnectionRadius)
+    {
+      if(mGoalVertex == *vi)
+        continue;
+      std::pair<LRAstar::Edge,bool> newEdge = boost::add_edge(mGoalVertex, *vi, g);
+      g[newEdge.first].length = goalDist;
+      g[newEdge.first].edgeStatus = CollisionStatus::FREE;
+      initializeEdgePoints(newEdge.first);
+    }
+  }
 }
 
 ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCondition & ptc)
 {
-
   // Priority Function: g-value
   auto cmpGValue = [&](Vertex left, Vertex right)
   {
@@ -927,7 +926,7 @@ ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCon
   extendLazyBand(qExtend, qFrontier);
 
   std::vector<Vertex> path;
-  while((!qFrontier.empty() && !solutionFound) || !qExtend.empty())
+  while(((!qFrontier.empty() && !solutionFound) || !qExtend.empty()) && ptc == false)
   {
     Vertex vTop = *qFrontier.begin();
     qFrontier.erase(qFrontier.begin());
@@ -971,4 +970,10 @@ ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCon
     OMPL_INFORM("Solution NOT Found");
 }
 
-} // namespace AB_LRAstar
+//==============================================================================
+ompl::base::PlannerStatus LRAstar::solve(double solveTime)
+{
+  return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
+}
+
+} // namespace LRAstar
