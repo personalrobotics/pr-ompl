@@ -19,7 +19,7 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si)
   , mRoadmapFileName("")
   , mLookahead(1.0)
   , mGreediness(1.0)
-  , mConnectionRadius(1.0)
+  , mConnectionRadius(3.0)
   , mBestPathCost(std::numeric_limits<double>::infinity())
   , mCheckRadius(0.4*mSpace->getLongestValidSegmentLength())
   , mNumEdgeEvals(0u)
@@ -41,7 +41,7 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si,
   , mRoadmapFileName(_roadmapFileName)
   , mLookahead(_lookahead)
   , mGreediness(_greediness)
-  , mConnectionRadius(1.0)
+  , mConnectionRadius(3.0)
   , mBestPathCost(std::numeric_limits<double>::infinity())
   , mCheckRadius(0.5*mSpace->getLongestValidSegmentLength())
   , mNumEdgeEvals(0u)
@@ -224,6 +224,7 @@ bool LRAstar::evaluateEdge(const LRAstar::Edge& e)
   mCollCheckTime += elapsedSeconds.count();
 
   return checkResult;
+  // return true;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -798,6 +799,16 @@ void LRAstar::setup()
   VPVertexNodeMap nodeMap = get(&VProp::node, g);
   EPStatusMap edgeStatusMap = get(&EProp::edgeStatus, g);
 
+  // Add start and goal vertices to the graph
+  StateWrapperPtr startState(new StateWrapper(mSpace));
+  mSpace->copyState(startState->state, pdef_->getStartState(0));
+
+  StateWrapperPtr goalState(new StateWrapper(mSpace));
+  mSpace->copyState(goalState->state, pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
+
+  mStartVertex = boost::add_vertex(g);
+  mGoalVertex = boost::add_vertex(g);
+
   // Set Default Values
   VertexIter vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(g); vi != vi_end; ++vi)
@@ -815,38 +826,13 @@ void LRAstar::setup()
     initializeEdgePoints(*ei);
   }
 
-  // Add start and goal vertices to the graph
-  StateWrapperPtr startState(new StateWrapper(mSpace));
-  mSpace->copyState(startState->state, pdef_->getStartState(0));
-
-  StateWrapperPtr goalState(new StateWrapper(mSpace));
-  mSpace->copyState(goalState->state, pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
-
-  auto validityChecker = si_->getStateValidityChecker();
-
-  if(!validityChecker->isValid(startState->state))
-    throw ompl::Exception("Start configuration is in collision!");
-  if(!validityChecker->isValid(goalState->state))
-    throw ompl::Exception("Goal configuration is in collision!");
-
-  mStartVertex = boost::add_vertex(g);
   g[mStartVertex].v_state = startState;
-  g[mStartVertex].vertexStatus = CollisionStatus::FREE;
-  g[mStartVertex].visited = false;
-  Node* nodeS = new Node();
-  g[mStartVertex].node = *nodeS;
-
-  mGoalVertex = boost::add_vertex(g);
   g[mGoalVertex].v_state = goalState;
-  g[mGoalVertex].vertexStatus = CollisionStatus::FREE;
-  g[mGoalVertex].visited = false;
-  Node* nodeG = new Node();
-  g[mGoalVertex].node = *nodeG;
 
   for (boost::tie(vi, vi_end) = vertices(g); vi != vi_end; ++vi)
   {
-    double startDist = mSpace->distance(g[*vi].v_state->state, startState->state);
-    double goalDist  = mSpace->distance(g[*vi].v_state->state, goalState->state);
+    double startDist = std::sqrt(si_->distance(g[*vi].v_state->state, g[mStartVertex].v_state->state));
+    double goalDist  = std::sqrt(si_->distance(g[*vi].v_state->state, g[mGoalVertex].v_state->state));
 
     if (startDist < mConnectionRadius)
     {
@@ -867,10 +853,25 @@ void LRAstar::setup()
       initializeEdgePoints(newEdge.first);
     }
   }
+  std::cout << std::endl;
 }
 
 ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCondition & ptc)
 {
+  std::cout << "PLANNING" << std::endl;
+  auto validityChecker = si_->getStateValidityChecker();
+
+  if(!validityChecker->isValid(g[mStartVertex].v_state->state))
+  {
+    OMPL_INFORM("Start Configuration is in collision");
+    return ompl::base::PlannerStatus::TIMEOUT;
+  }
+  if(!validityChecker->isValid(g[mGoalVertex].v_state->state))
+  {
+    OMPL_INFORM("Goal Configuration is in collision");
+    return ompl::base::PlannerStatus::TIMEOUT;
+  }
+
   // Priority Function: g-value
   auto cmpGValue = [&](Vertex left, Vertex right)
   {
@@ -967,7 +968,10 @@ ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCon
   }
   
   else
+  {
     OMPL_INFORM("Solution NOT Found");
+    return ompl::base::PlannerStatus::TIMEOUT;
+  }
 }
 
 //==============================================================================

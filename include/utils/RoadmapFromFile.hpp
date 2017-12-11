@@ -151,7 +151,7 @@ class RoadmapFromFile
       {
         ompl::base::State *state1 = get(_stateMap, source(*ei, g))->state;
         ompl::base::State *state2 = get(_stateMap, target(*ei, g))->state;
-        put(_lengthMap, *ei, mSpace->distance(state1, state2));
+        put(_lengthMap, *ei, std::sqrt(mSpace->distance(state1, state2)));
       }
     }
 
