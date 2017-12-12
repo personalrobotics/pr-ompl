@@ -777,6 +777,19 @@ bool LRAstar::evaluatePath(std::vector<Vertex> path, TG &qUpdate, TG &qRewire, T
 void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
   ompl::base::Planner::setProblemDefinition(pdef);
+
+  StateWrapperPtr startState(new StateWrapper(mSpace));
+  mSpace->copyState(startState->state, pdef_->getStartState(0));
+
+  StateWrapperPtr goalState(new StateWrapper(mSpace));
+  mSpace->copyState(goalState->state, pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
+
+  auto validityChecker = si_->getStateValidityChecker();
+
+  if(!validityChecker->isValid(startState->state))
+    throw ompl::Exception("Start configuration is in collision!");
+  if(!validityChecker->isValid(goalState->state))
+		throw ompl::Exception("Goal configuration is in collision!");
 }
 
 void LRAstar::setup()
@@ -858,19 +871,18 @@ void LRAstar::setup()
 
 ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCondition & ptc)
 {
-  std::cout << "PLANNING" << std::endl;
-  auto validityChecker = si_->getStateValidityChecker();
+  // auto validityChecker = si_->getStateValidityChecker();
 
-  if(!validityChecker->isValid(g[mStartVertex].v_state->state))
-  {
-    OMPL_INFORM("Start Configuration is in collision");
-    return ompl::base::PlannerStatus::TIMEOUT;
-  }
-  if(!validityChecker->isValid(g[mGoalVertex].v_state->state))
-  {
-    OMPL_INFORM("Goal Configuration is in collision");
-    return ompl::base::PlannerStatus::TIMEOUT;
-  }
+  // if(!validityChecker->isValid(g[mStartVertex].v_state->state))
+  // {
+  //   OMPL_INFORM("Start Configuration is in collision");
+  //   return ompl::base::PlannerStatus::INVALID_START;
+  // }
+  // if(!validityChecker->isValid(g[mGoalVertex].v_state->state))
+  // {
+  //   OMPL_INFORM("Goal Configuration is in collision");
+  //   return ompl::base::PlannerStatus::INVALID_GOAL;
+  // }
 
   // Priority Function: g-value
   auto cmpGValue = [&](Vertex left, Vertex right)
