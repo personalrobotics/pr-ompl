@@ -5,18 +5,16 @@ find_package(catkin REQUIRED
   COMPONENTS
   cmake_modules)
 find_package(OMPL REQUIRED)
-
-# TODO (avk): How many of these components are actually required?
 find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options system)
 
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS graph/include
   LIBRARIES ${PROJECT_NAME}
   DEPENDS Boost
 )
 
 include_directories(
-  include
+  graph/include
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
@@ -33,7 +31,8 @@ link_libraries(
 )
 
 add_library(${PROJECT_NAME}
-  # Add source file names here?
+  graph/src/LRAstar.cpp
+  graph/src/utils/BisectPerm.cpp
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -42,28 +41,7 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-#================================================================================
-# Installation
-
-  install(TARGETS pr-ompl EXPORT pr-omplConfig
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-    )
-
-  install(DIRECTORY include/ DESTINATION include)
-
-  # This makes the project importable from the install directory
-  install(EXPORT pr-omplConfig DESTINATION share/pr-ompl/cmake)
-
-  # This makes the project importable from the build directory
-  export(TARGETS pr-ompl FILE pr-omplConfig.cmake)
-
-  # Install the package.xml file (to satisfy REP-136).
-  install(FILES "package.xml"
-    DESTINATION "share/pr-ompl")
-
-# This custom target doesn't affect on building pr-ompl projects but is only for
+# This custom target doesn't affect building the project but is only for
 # displaying the header files in IDEs.
-FILE(GLOB_RECURSE prompl_headers "include/*.hpp")
-add_custom_target(headers SOURCES ${prompl_headers})
+FILE(GLOB_RECURSE LibFiles "graph/include/*.hpp")
+add_custom_target(headers SOURCES ${LibFiles})
