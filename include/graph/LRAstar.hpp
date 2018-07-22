@@ -27,9 +27,9 @@
 #include <ompl/datastructures/NearestNeighborsGNAT.h>
 
 // LRAstar defined headers
-#include "utils/BisectPerm.hpp"
-#include "utils/RoadmapFromFile.hpp"
-#include "utils/StateWrapper.hpp"
+#include "graph/utils/BisectPerm.hpp"
+#include "graph/utils/RoadmapFromFile.hpp"
+#include "graph/utils/StateWrapper.hpp"
 
 namespace LRAstar {
 

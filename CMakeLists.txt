@@ -8,14 +8,13 @@ find_package(OMPL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options system)
 
 catkin_package(
-  INCLUDE_DIRS graph/include rrt/include
+  INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   DEPENDS Boost
 )
 
 include_directories(
-  graph/include
-  rrt/include
+  include
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
@@ -32,9 +31,9 @@ link_libraries(
 )
 
 add_library(${PROJECT_NAME}
-  graph/src/LRAstar.cpp
-  graph/src/utils/BisectPerm.cpp
-  rrt/src/RRTConnect.cpp
+  src/graph/LRAstar.cpp
+  src/graph/utils/BisectPerm.cpp
+  src/rrt/RRTConnect.cpp
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -45,5 +44,5 @@ install(TARGETS ${PROJECT_NAME}
 
 # This custom target doesn't affect building the project but is only for
 # displaying the header files in IDEs.
-FILE(GLOB_RECURSE LibFiles "*/include/*.hpp")
+FILE(GLOB_RECURSE LibFiles "include/*.h*")
 add_custom_target(headers SOURCES ${LibFiles})

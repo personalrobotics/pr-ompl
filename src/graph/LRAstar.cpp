@@ -1,6 +1,6 @@
 /* Authors: Aditya Vamsikrishna Mandalika */
 
-#include "LRAstar/LRAstar.hpp"
+#include "graph/LRAstar.hpp"
 
 #include <algorithm>        // std::reverse
 #include <cmath>            // pow, sqrt

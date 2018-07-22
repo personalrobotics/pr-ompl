@@ -42,9 +42,10 @@
  * License: BSD
  */
 
-#include <RRTConnect.h>
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/tools/config/SelfConfig.h>
+
+#include "rrt/RRTConnect.h"
 
 using namespace ompl;
 using namespace ompl::geometric;
