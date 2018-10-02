@@ -32,6 +32,7 @@ link_libraries(
 
 add_library(${PROJECT_NAME}
   src/LRAstar.cpp
+  src/utils/BisectPerm.cpp
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -63,5 +64,5 @@ install(TARGETS ${PROJECT_NAME}
 
 # This custom target doesn't affect on building aikido projects but is only for
 # displaying the header files in IDEs.
-FILE(GLOB_RECURSE aikido_headers "include/*.hpp")
-add_custom_target(headers SOURCES ${aikido_headers})
+FILE(GLOB_RECURSE lib_headers "include/*.hpp")
+add_custom_target(headers SOURCES ${lib_headers})

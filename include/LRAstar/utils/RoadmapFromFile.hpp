@@ -1,5 +1,7 @@
-#ifndef UTIL_ROADMAPFROMFILE_HPP_
-#define UTIL_ROADMAPFROMFILE_HPP_
+// TODO(avk): Docstrings missing!
+
+#ifndef LRASTAR_UTILS_ROADMAPFROMFILE_HPP_
+#define LRASTAR_UTILS_ROADMAPFROMFILE_HPP_
 
 #include <iostream>
 #include <string>
@@ -19,14 +21,13 @@
 #include <ompl/base/StateSpace.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
-#include "CollisionStatus.hpp"
-
 namespace LRAstar {
+namespace utils {
 
 /* RoadmapFromFilePutStateMap */
-//! The map used to decode the .graphml file and populate the vertex states
-/// \tparam PropMap The type of property map for vertex states
-/// \tparam StateWrapper The wrapper for the ompl state
+/// The map used to decode the .graphml file and populate the vertex states.
+/// \tparam PropMap The type of property map for vertex states.
+/// \tparam StateWrapper The wrapper for the ompl state.
 template <class PropMap, class StateWrapper>
 class RoadmapFromFilePutStateMap
 {
@@ -40,15 +41,15 @@ public:
   ompl::base::StateSpacePtr mSpace;
   const size_t mDim;
 
-  RoadmapFromFilePutStateMap(PropMap _propMap, ompl::base::StateSpacePtr _space, size_t _dim)
-  : mPropMap{_propMap}
-  , mSpace{_space}
-  , mDim{_dim}
+  RoadmapFromFilePutStateMap(PropMap propMap, ompl::base::StateSpacePtr space, size_t dim)
+  : mPropMap{propMap}
+  , mSpace{space}
+  , mDim{dim}
   {
   }
 };
 
-/// Do not allow calling get on this property map
+// Do not allow calling get on this property map
 template <class PropMap, class StateWrapper>
 inline std::string
 get(const RoadmapFromFilePutStateMap<PropMap,StateWrapper> &map,
@@ -75,7 +76,7 @@ put(const RoadmapFromFilePutStateMap<PropMap,StateWrapper> &map,
 }
 
 /* RoadmapFromFilePutEdgeLengthMap */
-//! The map used to decode the .graphml file and populate the edge length
+/// The map used to decode the .graphml file and populate the edge length
 /// \tparam PropMap The type of property map for vertex states
 template <class PropMap>
 class RoadmapFromFilePutEdgeLengthMap
@@ -87,8 +88,8 @@ public:
   typedef std::string reference;
   const PropMap mPropMap;
 
-  RoadmapFromFilePutEdgeLengthMap(PropMap _propMap):
-    mPropMap(_propMap)
+  RoadmapFromFilePutEdgeLengthMap(PropMap propMap):
+    mPropMap(propMap)
   {
   }
 };
@@ -111,8 +112,46 @@ put(const RoadmapFromFilePutEdgeLengthMap<PropMap> &map,
   put(map.mPropMap, k, stod(representation));
 }
 
+/* RoadmapFromFilePutEdgePriorMap */
+/// The map used to decode the .graphml file and populate the edge priors
+/// \tparam PropMap The type of property map for edge prior
+template <class PropMap>
+class RoadmapFromFilePutEdgePriorMap
+{
+public:
+  typedef boost::writable_property_map_tag category;
+  typedef typename boost::property_traits<PropMap>::key_type key_type;
+  typedef std::string value_type;
+  typedef std::string reference;
+  const PropMap mPropMap;
+
+  RoadmapFromFilePutEdgePriorMap(PropMap propMap):
+    mPropMap(propMap)
+  {
+  }
+};
+
+/// Do not allow calling get on this property map
+template <class PropMap>
+inline std::string
+get(const RoadmapFromFilePutEdgePriorMap<PropMap> &map,
+  const typename RoadmapFromFilePutEdgePriorMap<PropMap>::key_type &k)
+{
+  abort();
+}
+
+template <class PropMap>
+inline void
+put(const RoadmapFromFilePutEdgePriorMap<PropMap> &map,
+  const typename RoadmapFromFilePutEdgePriorMap<PropMap>::key_type &k,
+  const std::string representation)
+{
+  put(map.mPropMap, k, stod(representation));
+}
+
+
 /* RoadmapFromFile */
-template <class Graph, class VStateMap, class StateWrapper, class ELength>
+template <class Graph, class VStateMap, class StateWrapper, class ELength, class EPrior>
 class RoadmapFromFile
 {
   typedef boost::graph_traits<Graph> GraphTypes;
@@ -125,21 +164,27 @@ class RoadmapFromFile
     const std::string mFilename;
 
     RoadmapFromFile(
-      const ompl::base::StateSpacePtr _space,
-      std::string _filename)
-    : mSpace(_space)
-    , mFilename(_filename)
+      const ompl::base::StateSpacePtr space,
+      std::string filename)
+    : mSpace(space)
+    , mFilename(filename)
+    , mBounds(0)
     {
+      if (mSpace->getType() != ompl::base::STATE_SPACE_REAL_VECTOR)
+        throw std::runtime_error("This only supports real vector state spaces!");
+      
       mDim = mSpace->getDimension();
+      mBounds = mSpace->as<ompl::base::RealVectorStateSpace>()->getBounds();
     }
 
     ~RoadmapFromFile() {}
 
-    void generate(Graph &g, VStateMap _stateMap, ELength _lengthMap)
+    void generate(Graph &g, VStateMap stateMap, ELength lengthMap, EPrior priorMap)
     {
       boost::dynamic_properties props;
-      props.property("state", RoadmapFromFilePutStateMap<VStateMap, StateWrapper>(_stateMap, mSpace, mDim));
-      props.property("length", RoadmapFromFilePutEdgeLengthMap<ELength>(_lengthMap));
+      props.property("state", RoadmapFromFilePutStateMap<VStateMap, StateWrapper>(stateMap, mSpace, mDim));
+      props.property("length", RoadmapFromFilePutEdgeLengthMap<ELength>(lengthMap));
+      props.property("prior", RoadmapFromFilePutEdgePriorMap<EPrior>(priorMap));
 
       std::ifstream fp;
       fp.open(mFilename.c_str());
@@ -149,17 +194,19 @@ class RoadmapFromFile
       EdgeIter ei, ei_end;
       for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
       {
-        ompl::base::State *state1 = get(_stateMap, source(*ei, g))->state;
-        ompl::base::State *state2 = get(_stateMap, target(*ei, g))->state;
-        put(_lengthMap, *ei, std::sqrt(mSpace->distance(state1, state2)));
+        ompl::base::State *state1 = get(stateMap, source(*ei, g))->state;
+        ompl::base::State *state2 = get(stateMap, target(*ei, g))->state;
+        put(lengthMap, *ei, mSpace->distance(state1, state2));
       }
     }
 
   private:
     size_t mDim;
+    ompl::base::RealVectorBounds mBounds;
     const ompl::base::StateSpacePtr mSpace;
 };
 
+} // namespace utils
 } // namespace LRAstar
 
-#endif // UTIL_ROADMAPFROMFILE_HPP_
+#endif // LRASTAR_UTILS_ROADMAPFROMFILE_HPP_
