@@ -17,8 +17,8 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si)
   , mSpace(si->getStateSpace())
   , mRoadmapFileName("")
   , mLookahead(1.0)
-  , mConnectionRadius(1.0)
-  , mCheckRadius(0.005*mConnectionRadius)
+  , mConnectionRadius(4.0)
+  , mCheckRadius(0.4)
 {
   // Register my setting callbacks.
   Planner::declareParam<std::string>("roadmapFilename", this, &LRAstar::setRoadmapFileName, &LRAstar::getRoadmapFileName);
@@ -32,8 +32,8 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si,
   , mSpace(si->getStateSpace())
   , mRoadmapFileName(roadmapFileName)
   , mLookahead(lookahead)
-  , mConnectionRadius(0.04)
-  , mCheckRadius(0.005*mConnectionRadius)
+  , mConnectionRadius(4.0)
+  , mCheckRadius(0.4)
 {
   if (mRoadmapFileName == "")
     throw std::invalid_argument("Provide a non-empty path to roadmap.");
@@ -50,22 +50,29 @@ LRAstar::~LRAstar()
 // ===========================================================================================
 void LRAstar::setup()
 {
+
+  OMPL_INFORM("[LRA*] Setup Initialized");
+
   // Check if already setup.
   if (static_cast<bool>(ompl::base::Planner::setup_))
     return;
 
+  std::cout << __LINE__ << std::endl;
   ompl::base::Planner::setup();
 
+  std::cout << __LINE__ << std::endl;
   roadmapPtr = boost::shared_ptr<utils::RoadmapFromFile<Graph, VPStateMap, utils::StateWrapper, EPLengthMap, EPPriorMap>>
                 (new utils::RoadmapFromFile<Graph, VPStateMap, utils::StateWrapper, EPLengthMap, EPPriorMap>
                 (mSpace, mRoadmapFileName));
 
+  std::cout << __LINE__ << std::endl;
   roadmapPtr->generate(graph,
                        get(&VProp::state, graph),
                        get(&EProp::length, graph),
                        get(&EProp::prior, graph));
 
   // Set default vertex values.
+  std::cout << __LINE__ << std::endl;
   VertexIter vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(graph); vi != vi_end; ++vi)
   {
@@ -78,6 +85,7 @@ void LRAstar::setup()
   }
 
   // Set default edge values.
+  std::cout << __LINE__ << std::endl;
   EdgeIter ei, ei_end;
   for (boost::tie(ei, ei_end) = edges(graph); ei != ei_end; ++ei)
   {
@@ -86,6 +94,7 @@ void LRAstar::setup()
     initializeEdgePoints(*ei);
   }
 
+  std::cout << __LINE__ << std::endl;
   mBestPathCost = std::numeric_limits<double>::infinity();
 }
 
@@ -125,6 +134,8 @@ void LRAstar::clear()
 // ===========================================================================================
 void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
+  OMPL_INFORM("[LRA*] Problem Definition Initialized");
+
   // Make sure we setup the planner first.
   if (!static_cast<bool>(ompl::base::Planner::setup_))
   {
@@ -204,6 +215,8 @@ void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 // ===========================================================================================
 ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCondition & ptc)
 {
+  OMPL_INFORM("[LRA*] Solving using LRAstar");
+
   // Priority Function: g-value
   auto cmpGValue = [&](const Vertex& left, const Vertex& right)
   {
