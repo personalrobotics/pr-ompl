@@ -18,7 +18,7 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si)
   , mRoadmapFileName("")
   , mLookahead(1.0)
   , mConnectionRadius(4.0)
-  , mCheckRadius(0.4)
+  , mCheckRadius(0.1)
 {
   // Register my setting callbacks.
   Planner::declareParam<std::string>("roadmapFilename", this, &LRAstar::setRoadmapFileName, &LRAstar::getRoadmapFileName);
@@ -33,7 +33,7 @@ LRAstar::LRAstar(const ompl::base::SpaceInformationPtr &si,
   , mRoadmapFileName(roadmapFileName)
   , mLookahead(lookahead)
   , mConnectionRadius(4.0)
-  , mCheckRadius(0.4)
+  , mCheckRadius(0.1)
 {
   if (mRoadmapFileName == "")
     throw std::invalid_argument("Provide a non-empty path to roadmap.");
