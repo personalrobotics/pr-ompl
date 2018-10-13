@@ -50,29 +50,22 @@ LRAstar::~LRAstar()
 // ===========================================================================================
 void LRAstar::setup()
 {
-
-  OMPL_INFORM("[LRA*] Setup Initialized");
-
   // Check if already setup.
   if (static_cast<bool>(ompl::base::Planner::setup_))
     return;
 
-  std::cout << __LINE__ << std::endl;
   ompl::base::Planner::setup();
 
-  std::cout << __LINE__ << std::endl;
   roadmapPtr = boost::shared_ptr<utils::RoadmapFromFile<Graph, VPStateMap, utils::StateWrapper, EPLengthMap, EPPriorMap>>
                 (new utils::RoadmapFromFile<Graph, VPStateMap, utils::StateWrapper, EPLengthMap, EPPriorMap>
                 (mSpace, mRoadmapFileName));
 
-  std::cout << __LINE__ << std::endl;
   roadmapPtr->generate(graph,
                        get(&VProp::state, graph),
                        get(&EProp::length, graph),
                        get(&EProp::prior, graph));
 
   // Set default vertex values.
-  std::cout << __LINE__ << std::endl;
   VertexIter vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(graph); vi != vi_end; ++vi)
   {
@@ -85,7 +78,6 @@ void LRAstar::setup()
   }
 
   // Set default edge values.
-  std::cout << __LINE__ << std::endl;
   EdgeIter ei, ei_end;
   for (boost::tie(ei, ei_end) = edges(graph); ei != ei_end; ++ei)
   {
@@ -94,7 +86,6 @@ void LRAstar::setup()
     // initializeEdgePoints(*ei);
   }
 
-  std::cout << __LINE__ << std::endl;
   mBestPathCost = std::numeric_limits<double>::infinity();
 }
 
@@ -134,8 +125,6 @@ void LRAstar::clear()
 // ===========================================================================================
 void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
-  OMPL_INFORM("[LRA*] Problem Definition Initialized");
-
   // Make sure we setup the planner first.
   if (!static_cast<bool>(ompl::base::Planner::setup_))
   {
@@ -152,10 +141,10 @@ void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 
   auto validityChecker = si_->getStateValidityChecker();
 
-  if(!validityChecker->isValid(startState->state))
-    throw ompl::Exception("Start configuration is in collision!");
-  if(!validityChecker->isValid(goalState->state))
-    throw ompl::Exception("Goal configuration is in collision!");
+  // if(!validityChecker->isValid(startState->state))
+  //   throw ompl::Exception("Start configuration is in collision!");
+  // if(!validityChecker->isValid(goalState->state))
+  //   throw ompl::Exception("Goal configuration is in collision!");
 
   // Add start and goal vertices to the graph
   mStartVertex = boost::add_vertex(graph);
@@ -215,7 +204,17 @@ void LRAstar::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 // ===========================================================================================
 ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCondition & ptc)
 {
-  OMPL_INFORM("[LRA*] Solving using LRAstar");
+  auto validityChecker = si_->getStateValidityChecker();
+  if (!validityChecker->isValid(graph[mStartVertex].state->state))
+  {
+    OMPL_WARN("Start State in Collision");
+    return ompl::base::PlannerStatus::INVALID_START;
+  }
+  if (!validityChecker->isValid(graph[mGoalVertex].state->state))
+  {
+    OMPL_WARN("Goal State in Collision");
+    return ompl::base::PlannerStatus::INVALID_GOAL;
+  }
 
   // Priority Function: g-value
   auto cmpGValue = [&](const Vertex& left, const Vertex& right)
@@ -285,7 +284,6 @@ ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCon
 
     if (goalFound)
     {
-      OMPL_INFORM("Solution Found!");
       solutionFound = true;
       break;
     }
@@ -304,18 +302,9 @@ ompl::base::PlannerStatus LRAstar::solve(const ompl::base::PlannerTerminationCon
   {
     mBestPathCost = estimateCostToCome(mGoalVertex);
     pdef_->addSolutionPath(constructSolution(mStartVertex, mGoalVertex));
-
-    OMPL_INFORM("Lookahead:                   %f", mLookahead);
-    OMPL_INFORM("Number of Edges Rewired:     %d", mNumEdgeRewires);
-    OMPL_INFORM("Number of Edges Evaluated:   %d", mNumEdgeEvals);
     OMPL_INFORM("Cost of goal:                %f", mBestPathCost);
 
     return ompl::base::PlannerStatus::EXACT_SOLUTION;
-  }
-
-  else
-  {
-    OMPL_INFORM("Solution NOT Found");
   }
 }
 
