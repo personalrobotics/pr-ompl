@@ -91,7 +91,7 @@ void LRAstar::setup()
   {
     graph[*ei].isEvaluated = false;
     graph[*ei].status = CollisionStatus::FREE;
-    initializeEdgePoints(*ei);
+    // initializeEdgePoints(*ei);
   }
 
   std::cout << __LINE__ << std::endl;
@@ -1000,6 +1000,9 @@ bool LRAstar::evaluateEdge(const LRAstar::Edge& e)
 {
   // Log Time
   std::chrono::time_point<std::chrono::system_clock> startEvaluationTime{std::chrono::system_clock::now()};
+
+  // Initialize the collision checking points
+  initializeEdgePoints(e);
 
   // March along edge states with highest resolution
   mNumEdgeEvals++;
