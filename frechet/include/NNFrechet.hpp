@@ -76,7 +76,6 @@ namespace NNFrechet {
     typedef boost::property_map<Graph, double EProp::*>::type EPEvaluatedMap;
 
     // NNF instance variables.
-    int mRandomSeed;
     std::default_random_engine mRandomGenerator;
 
     /// The pointer to the OMPL state space
@@ -120,7 +119,13 @@ namespace NNFrechet {
       std::vector<Eigen::Isometry3d>& referencePath,
       int numIKSamples,
       int numNN,
-      int discretization);
+      int discretization,
+      int seed = 1);
+
+    // Setters and getters.
+    void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
+    void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc);
+    void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
 
   };
 

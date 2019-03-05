@@ -18,7 +18,8 @@ NNFrechet::NNFrechet(
   std::vector<Eigen::Isometry3d>& referencePath,
   int numIKSamples,
   int numNN,
-  int discretization)
+  int discretization,
+  int seed)
   : ompl::base::Planner(si, "NNFrechet")
   , mSpace(si->getStateSpace())
   , mReferencePath(referencePath)
@@ -26,7 +27,26 @@ NNFrechet::NNFrechet(
   , mNumNN(numNN)
   , mDiscretization(discretization)
 {
-  // TODO.
+  mRandomGenerator.seed(seed);
+}
+
+void NNFrechet::setFKFunc(
+  std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc
+) {
+  mFkFunc = fkFunc;
+}
+
+void NNFrechet::setIKFunc(
+  std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc
+) {
+  mIkFunc = ikFunc;
+}
+
+
+void NNFrechet::setDistanceFunc(
+  std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc
+) {
+  mDistanceFunc = distanceFunc;
 }
 
 }
