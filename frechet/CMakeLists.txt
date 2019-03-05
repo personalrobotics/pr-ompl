@@ -6,18 +6,14 @@ find_package(catkin REQUIRED
   cmake_modules)
 find_package(OMPL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options system)
-
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  DEPENDS Boost
-)
+find_package(Eigen3 REQUIRED)
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 link_directories(
@@ -34,8 +30,8 @@ link_libraries(
 #  src/LRAstar.cpp
 #)
 
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(TARGETS ${PROJECT_NAME}
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
