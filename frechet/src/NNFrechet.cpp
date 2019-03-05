@@ -24,13 +24,32 @@ NNFrechet::NNFrechet(
   int seed)
   : ompl::base::Planner(si, "NNFrechet")
   , mSpace(si->getStateSpace())
-  , mReferencePath(referencePath)
   , mNumWaypoints(numWaypoints)
   , mIKMultiplier(ikMultiplier)
   , mNumNN(numNN)
   , mDiscretization(discretization)
 {
   mRandomGenerator.seed(seed);
+
+  // Don't use the entire reference path. Subsample it.
+  mReferencePath = subsampleRefPath(referencePath);
+}
+
+std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
+  std::vector<Eigen::Isometry3d>& referencePath
+) {
+  int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
+  std::vector<int> sampledIDs = linIntSpace(0, mReferencePath.size() - 1, numPts);
+
+  std::vector<Eigen::Isometry3d> subSampled;
+  for (int i = 0; i < sampledIDs.size(); i++)
+  {
+    int sampledIndex = sampledIDs[i];
+    Eigen::Isometry3d sampledPose = mReferencePath[sampledIndex];
+    subSampled.push_back(sampledPose);
+  }
+
+  return subSampled;
 }
 
 void NNFrechet::setFKFunc(
@@ -56,20 +75,15 @@ void NNFrechet::buildReferenceGraph()
   VPNameMap nameMap = get(&VProp::name, mReferenceGraph);
   VPPoseEEMap poseMap = get(&VProp::poseEE, mReferenceGraph);
 
-  // Don't use the entire reference path. Subsample it.
-  int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
-  std::vector<int> sampledIDs = linIntSpace(0, mReferencePath.size() - 1, numPts);
-
   Vertex prevVertex;
-  for (int i = 0; i < sampledIDs.size(); i++)
+  for (int i = 0; i < mReferencePath.size(); i++)
   {
     Vertex newRefVertex = add_vertex(mReferenceGraph);
 
-    int sampledIndex = sampledIDs[i];
-    Eigen::Isometry3d sampledPose = mReferencePath[sampledIndex];
-    poseMap[newRefVertex] = sampledPose;
+    Eigen::Isometry3d curPose = mReferencePath[i];
+    poseMap[newRefVertex] = curPose;
 
-    std::string refVertexName = "r" + std::to_string(sampledIndex);
+    std::string refVertexName = "r" + std::to_string(i);
     nameMap[newRefVertex] = refVertexName;
 
     if (i > 0)
@@ -82,7 +96,7 @@ void NNFrechet::buildReferenceGraph()
     // Record the first and last node on the reference graph.
     if (i == 0)
       mRefStartNode = newRefVertex;
-    else if (i == sampledIDs.size() - 1)
+    else if (i == mReferencePath.size() - 1)
       mRefGoalNode = newRefVertex;
   }
 }

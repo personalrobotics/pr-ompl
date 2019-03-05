@@ -128,6 +128,7 @@ namespace NNFrechet {
       int seed = 1);
 
     // Setters and getters.
+    std::vector<Eigen::Isometry3d> subsampleRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
     void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
