@@ -91,9 +91,12 @@ namespace NNFrechet {
     // Reference path we were given.
     std::vector<Eigen::Isometry3d> mReferencePath;
 
+    Vertex mRefStartNode;
+    Vertex mRefGoalNode;
     Vertex mNNStartNode;
-    Vertex mTensorStart;
-    Vertex mTensorGoal;
+    Vertex mNNGoalNode;
+    Vertex mTensorStartNode;
+    Vertex mTensorGoalNode;
 
     int mNNSampledID = 0;
     int mNNSubsampleID = 0;
@@ -128,6 +131,9 @@ namespace NNFrechet {
     void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
     void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
+
+    // Graph construction methods.
+    void buildReferenceGraph();
 
   };
 

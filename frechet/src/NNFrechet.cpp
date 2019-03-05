@@ -8,6 +8,7 @@
 #include <assert.h>         // Debug
 #include <chrono>           // record rewireTime
 
+#include "util.hpp"
 #include "NNFrechet.hpp"
 
 namespace NNFrechet
@@ -48,6 +49,42 @@ void NNFrechet::setDistanceFunc(
   std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc
 ) {
   mDistanceFunc = distanceFunc;
+}
+
+void NNFrechet::buildReferenceGraph()
+{
+  VPNameMap nameMap = get(&VProp::name, mReferenceGraph);
+  VPPoseEEMap poseMap = get(&VProp::poseEE, mReferenceGraph);
+
+  // Don't use the entire reference path. Subsample it.
+  int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
+  std::vector<int> sampledIDs = linIntSpace(0, mReferencePath.size() - 1, numPts);
+
+  Vertex prevVertex;
+  for (int i = 0; i < sampledIDs.size(); i++)
+  {
+    Vertex newRefVertex = add_vertex(mReferenceGraph);
+
+    int sampledIndex = sampledIDs[i];
+    Eigen::Isometry3d sampledPose = mReferencePath[sampledIndex];
+    poseMap[newRefVertex] = sampledPose;
+
+    std::string refVertexName = "r" + std::to_string(sampledIndex);
+    nameMap[newRefVertex] = refVertexName;
+
+    if (i > 0)
+    {
+      add_edge(prevVertex, newRefVertex, mReferenceGraph);
+    }
+
+    prevVertex = newRefVertex;
+
+    // Record the first and last node on the reference graph.
+    if (i == 0)
+      mRefStartNode = newRefVertex;
+    else if (i == sampledIDs.size() - 1)
+      mRefGoalNode = newRefVertex;
+  }
 }
 
 
