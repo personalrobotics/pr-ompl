@@ -72,7 +72,43 @@ namespace NNFrechet {
     typedef boost::property_map<Graph, double EProp::*>::type EPLengthMap;
     typedef boost::property_map<Graph, double EProp::*>::type EPEvaluatedMap;
 
-    // TODO.
+    // NNF instance variables.
+    int mRandomSeed;
+    std::default_random_engine mRandomGenerator;
+
+    Graph referenceGraph;
+    Graph nnGraph;
+    Graph tensorProductGraph;
+
+    // Map name of TPG Node -> Vertex.
+    std::unordered_map<std::string, Vertex> nameToVertex;
+
+    // Reference path we were given.
+    std::vector<Eigen::Isometry3d> referencePath;
+
+    Vertex nnStartNode;
+    Vertex tensorStart;
+    Vertex tensorGoal;
+
+    int nnSampledID = 0;
+    int nnSubsampleID = 0;
+
+    // Tensor-product bottleneck vertex.
+    Vertex bottleneckVertex;
+    // Cost of found tensor-product path.
+    double bottleneckCost;
+
+    // Parameter Related
+    int numIKSamples;
+    int numNN;
+    int discretization;
+
+    // Function pointers that are set during creation for FK/IK.
+    std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
+    std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> mIkFunc;
+    // Custom task space distance function used to calculate frechet distance.
+    std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> mDistanceFunc;
+
   };
 
 } // namespace LRAstar
