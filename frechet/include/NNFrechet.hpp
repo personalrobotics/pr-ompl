@@ -104,7 +104,8 @@ namespace NNFrechet {
     double mBottleneckCost;
 
     // Parameter Related
-    int mNumIKSamples;
+    int mNumWaypoints;
+    int mIKMultiplier;
     int mNumNN;
     int mDiscretization;
 
@@ -117,7 +118,8 @@ namespace NNFrechet {
     NNFrechet(
       const ompl::base::SpaceInformationPtr &si,
       std::vector<Eigen::Isometry3d>& referencePath,
-      int numIKSamples,
+      int numWaypoints,
+      int ikMultiplier,
       int numNN,
       int discretization,
       int seed = 1);

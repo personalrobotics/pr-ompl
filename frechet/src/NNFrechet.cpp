@@ -16,14 +16,16 @@ namespace NNFrechet
 NNFrechet::NNFrechet(
   const ompl::base::SpaceInformationPtr &si,
   std::vector<Eigen::Isometry3d>& referencePath,
-  int numIKSamples,
+  int numWaypoints,
+  int ikMultiplier,
   int numNN,
   int discretization,
   int seed)
   : ompl::base::Planner(si, "NNFrechet")
   , mSpace(si->getStateSpace())
   , mReferencePath(referencePath)
-  , mNumIKSamples(numIKSamples)
+  , mNumWaypoints(numWaypoints)
+  , mIKMultiplier(ikMultiplier)
   , mNumNN(numNN)
   , mDiscretization(discretization)
 {
@@ -42,11 +44,12 @@ void NNFrechet::setIKFunc(
   mIkFunc = ikFunc;
 }
 
-
 void NNFrechet::setDistanceFunc(
   std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc
 ) {
   mDistanceFunc = distanceFunc;
 }
+
+
 
 }
