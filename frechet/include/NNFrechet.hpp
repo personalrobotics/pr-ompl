@@ -7,6 +7,9 @@
 #include <queue>
 #include <exception>
 #include <iostream>
+#include <unordered_map>
+
+#include <Eigen/Dense>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/properties.hpp>
@@ -76,38 +79,48 @@ namespace NNFrechet {
     int mRandomSeed;
     std::default_random_engine mRandomGenerator;
 
-    Graph referenceGraph;
-    Graph nnGraph;
-    Graph tensorProductGraph;
+    /// The pointer to the OMPL state space
+    const ompl::base::StateSpacePtr mSpace;
+
+    Graph mReferenceGraph;
+    Graph mNNGraph;
+    Graph mTensorProductGraph;
 
     // Map name of TPG Node -> Vertex.
-    std::unordered_map<std::string, Vertex> nameToVertex;
+    std::unordered_map<std::string, Vertex> mNameToVertex;
 
     // Reference path we were given.
-    std::vector<Eigen::Isometry3d> referencePath;
+    std::vector<Eigen::Isometry3d> mReferencePath;
 
-    Vertex nnStartNode;
-    Vertex tensorStart;
-    Vertex tensorGoal;
+    Vertex mNNStartNode;
+    Vertex mTensorStart;
+    Vertex mTensorGoal;
 
-    int nnSampledID = 0;
-    int nnSubsampleID = 0;
+    int mNNSampledID = 0;
+    int mNNSubsampleID = 0;
 
     // Tensor-product bottleneck vertex.
-    Vertex bottleneckVertex;
+    Vertex mBottleneckVertex;
     // Cost of found tensor-product path.
-    double bottleneckCost;
+    double mBottleneckCost;
 
     // Parameter Related
-    int numIKSamples;
-    int numNN;
-    int discretization;
+    int mNumIKSamples;
+    int mNumNN;
+    int mDiscretization;
 
     // Function pointers that are set during creation for FK/IK.
     std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
     std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> mIkFunc;
     // Custom task space distance function used to calculate frechet distance.
     std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> mDistanceFunc;
+
+    NNFrechet(
+      const ompl::base::SpaceInformationPtr &si,
+      std::vector<Eigen::Isometry3d>& referencePath,
+      int numIKSamples,
+      int numNN,
+      int discretization);
 
   };
 

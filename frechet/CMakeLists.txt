@@ -26,9 +26,9 @@ link_libraries(
   ${Boost_LIBRARIES}
 )
 
-#add_library(${PROJECT_NAME}
-#  src/LRAstar.cpp
-#)
+add_library(${PROJECT_NAME}
+  src/NNFrechet.cpp
+)
 
 #install(TARGETS ${PROJECT_NAME}
 #  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
