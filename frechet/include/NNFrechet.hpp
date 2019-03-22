@@ -93,8 +93,10 @@ namespace NNFrechet {
 
     Vertex mRefStartNode;
     Vertex mRefGoalNode;
+
     Vertex mNNStartNode;
     Vertex mNNGoalNode;
+
     Vertex mTensorStartNode;
     Vertex mTensorGoalNode;
 
@@ -135,6 +137,8 @@ namespace NNFrechet {
 
     // Graph construction methods.
     void buildReferenceGraph();
+
+    void buildNNGraph();
 
   };
 

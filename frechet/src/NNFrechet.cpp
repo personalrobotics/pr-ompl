@@ -101,6 +101,125 @@ void NNFrechet::buildReferenceGraph()
   }
 }
 
+void NNFrechet::buildNNGraph()
+{
+  VPNameMap nameMap = get(&VProp::name, mNNGraph);
+  VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
+
+  // Set up the variable that keeps track of nodes sampled for the NN Graph.
+  std::vector< std::vector<Vertex> > sampledNNGraphNodes;
+  sampledNNGraphNodes.resize(mReferencePath.size());
+
+  // NOTE: Add dummy start vertex to the NN Graph.
+  mNNStartNode = add_vertex(mNNGraph);
+  nameMap[mNNStartNode] = "c0";
+  poseMap[mNNStartNode] = mReferencePath.at(0);
+
+  // NOTE: Add dummy end vertex to the NN Graph.
+  mNNGoalNode = add_vertex(mNNGraph);
+  nameMap[mNNGoalNode] = "c1";
+  poseMap[mNNGoalNode] = mReferencePath.back();
+
+  // NOTE: We always sample the start and end vertices since we want the
+  // path to reach those. We also sample multiple solutions for each.
+  Eigen::Isometry3d& firstWaypoint = mReferencePath.at(0);
+  // TODO: Rest of this.
+  // std::vector<Vertex> firstWaypointVertices = addNewIkNodesStrict(
+  //   diskGraph,
+  //   firstWaypoint,
+  //   numEndpointSamples,
+  //   0, // When sampling IK in disk graph, waypoint id/layer index are the same.
+  //   0,
+  //   diskGraphPoseMap,
+  //   mUseLazyIK);
+  //
+  // // NOTE: In this case, there's no point going on. Just escape.
+  // if (firstWaypointVertices.size() == 0)
+  // {
+  //   return;
+  // }
+  //
+  // for (Vertex firstWaypointNode : firstWaypointVertices)
+  // {
+  //   add_edge(dummyStartVertex, firstWaypointNode, diskGraph);
+  //   mSampledNNGraphNodes.at(0).push_back(firstWaypointNode);
+  // }
+  //
+  // // NOTE: Now repeat eveything we did, but for the last waypoint on the
+  // // reference path.
+  // PoseType lastWaypoint = referencePoses.at(referencePoses.size() - 1);
+  // std::vector<Vertex> lastWaypointVertices = addNewIkNodesStrict(
+  //   diskGraph,
+  //   lastWaypoint,
+  //   numEndpointSamples,
+  //   mSampledNNGraphNodes.size() - 1,
+  //   mSampledNNGraphNodes.size() - 1,
+  //   diskGraphPoseMap,
+  //   mUseLazyIK);
+  //
+  // for (Vertex lastWaypointNode : lastWaypointVertices)
+  // {
+  //   mSampledNNGraphNodes.at(mSampledNNGraphNodes.size() - 1).push_back(lastWaypointNode);
+  //
+  //   add_edge(lastWaypointNode, dummyEndVertex, diskGraph);
+  // }
+  //
+  // int remainingIKBudget = numWaypoints * numIK;
+  // // We already used some of this for the end points.
+  // remainingIKBudget = remainingIKBudget - 2*numEndpointSamples;
+  //
+  // // Sample nodes for waypoints besides the endpoints of the reference path.
+  // auto sampledNodes = sampleNNGraphNodes(
+  //   remainingIKBudget,
+  //   diskGraph,
+  //   referencePoses,
+  //   diskGraphPoseMap);
+  //
+  // // Update mSampledNNGraphNodes with the new nodes that were sampled.
+  // for (int refIndex = 0; refIndex < sampledNodes.size(); refIndex++)
+  // {
+  //   for (auto indexNewNode : sampledNodes.at(refIndex))
+  //     mSampledNNGraphNodes.at(refIndex).push_back(indexNewNode);
+  // }
+  //
+  // // Connect each raodmap node to its kNN in C-Space that are sampled *further*
+  // // down the reference path (to ensure monotonicity).
+  // for (int refIndex = 0; refIndex < mSampledNNGraphNodes.size(); refIndex++)
+  // {
+  //   for (auto& nodeSampledAtWaypoint : mSampledNNGraphNodes.at(refIndex))
+  //   {
+  //     std::vector<Vertex> deeperNodes = flattenVertexList(
+  //       mSampledNNGraphNodes,
+  //       refIndex + 1,
+  //       mSampledNNGraphNodes.size() - 1);
+  //
+  //     // Get neighbors sampled from waypoints further along the reference path.
+  //     std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
+  //       nodeSampledAtWaypoint,
+  //       deeperNodes,
+  //       diskGraph,
+  //       mCSpaceDistFunc,
+  //       mNumNearestNeighbors);
+  //
+  //     for (auto& closeNode : cSpaceNeighbors)
+  //     {
+  //       addSubsampledEdge(
+  //         diskGraph,
+  //         nodeSampledAtWaypoint,
+  //         closeNode,
+  //         diskGraphPoseMap,
+  //         // NOTE: This isn't perfect, but trying to match the discretization
+  //         // of the reference path and roadmap paths exactly can prove so
+  //         // expensive that it's really not worth it.
+  //         discretization,
+  //         // Remember, ref path indices and layer indices are the same now!
+  //         refIndex,
+  //         mUseLazyIK);
+  //     }
+  //   }
+  // }
+}
+
 
 
 }
