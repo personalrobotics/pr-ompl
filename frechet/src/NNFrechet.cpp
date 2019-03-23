@@ -8,7 +8,6 @@
 #include <assert.h>         // Debug
 #include <chrono>           // record rewireTime
 
-#include "util.hpp"
 #include "NNFrechet.hpp"
 
 namespace NNFrechet
@@ -224,56 +223,51 @@ void NNFrechet::buildNNGraph()
   // We already used some of this for the end points.
   remainingIKBudget -= 2*mIKMultiplier;
 
-  // // Sample nodes for waypoints besides the endpoints of the reference path.
-  // auto sampledNodes = sampleNNGraphNodes(
-  //   remainingIKBudget,
-  //   diskGraph,
-  //   referencePoses,
-  //   diskGraphPoseMap);
-  //
-  // // Update mSampledNNGraphNodes with the new nodes that were sampled.
-  // for (int refIndex = 0; refIndex < sampledNodes.size(); refIndex++)
-  // {
-  //   for (auto indexNewNode : sampledNodes.at(refIndex))
-  //     mSampledNNGraphNodes.at(refIndex).push_back(indexNewNode);
-  // }
-  //
-  // // Connect each raodmap node to its kNN in C-Space that are sampled *further*
-  // // down the reference path (to ensure monotonicity).
-  // for (int refIndex = 0; refIndex < mSampledNNGraphNodes.size(); refIndex++)
-  // {
-  //   for (auto& nodeSampledAtWaypoint : mSampledNNGraphNodes.at(refIndex))
-  //   {
-  //     std::vector<Vertex> deeperNodes = flattenVertexList(
-  //       mSampledNNGraphNodes,
-  //       refIndex + 1,
-  //       mSampledNNGraphNodes.size() - 1);
-  //
-  //     // Get neighbors sampled from waypoints further along the reference path.
-  //     std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
-  //       nodeSampledAtWaypoint,
-  //       deeperNodes,
-  //       diskGraph,
-  //       mCSpaceDistFunc,
-  //       mNumNearestNeighbors);
-  //
-  //     for (auto& closeNode : cSpaceNeighbors)
-  //     {
-  //       addSubsampledEdge(
-  //         diskGraph,
-  //         nodeSampledAtWaypoint,
-  //         closeNode,
-  //         diskGraphPoseMap,
-  //         // NOTE: This isn't perfect, but trying to match the discretization
-  //         // of the reference path and roadmap paths exactly can prove so
-  //         // expensive that it's really not worth it.
-  //         discretization,
-  //         // Remember, ref path indices and layer indices are the same now!
-  //         refIndex,
-  //         mUseLazyIK);
-  //     }
-  //   }
-  // }
+  // Sample nodes for waypoints besides the endpoints of the reference path.
+  auto sampledNodes = sampleNNGraphNodes(remainingIKBudget);
+
+  for (int refIndex = 0; refIndex < sampledNodes.size(); refIndex++)
+  {
+    for (auto indexNewNode : sampledNodes.at(refIndex))
+      sampledNNGraphNodes.at(refIndex).push_back(indexNewNode);
+  }
+
+  // Connect each raodmap node to its kNN in C-Space that are sampled *further*
+  // down the reference path (to ensure monotonicity).
+  for (int refIndex = 0; refIndex < sampledNNGraphNodes.size(); refIndex++)
+  {
+    for (auto& nodeSampledAtWaypoint : sampledNNGraphNodes.at(refIndex))
+    {
+      std::vector<Vertex> deeperNodes = flattenVertexList(
+        sampledNNGraphNodes,
+        refIndex + 1,
+        sampledNNGraphNodes.size() - 1);
+
+      // // Get neighbors sampled from waypoints further along the reference path.
+      // std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
+      //   nodeSampledAtWaypoint,
+      //   deeperNodes,
+      //   diskGraph,
+      //   mCSpaceDistFunc,
+      //   mNumNearestNeighbors);
+      //
+      // for (auto& closeNode : cSpaceNeighbors)
+      // {
+      //   addSubsampledEdge(
+      //     diskGraph,
+      //     nodeSampledAtWaypoint,
+      //     closeNode,
+      //     diskGraphPoseMap,
+      //     // NOTE: This isn't perfect, but trying to match the discretization
+      //     // of the reference path and roadmap paths exactly can prove so
+      //     // expensive that it's really not worth it.
+      //     discretization,
+      //     // Remember, ref path indices and layer indices are the same now!
+      //     refIndex,
+      //     mUseLazyIK);
+      // }
+    }
+  }
 }
 
 
