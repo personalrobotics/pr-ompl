@@ -140,6 +140,7 @@ namespace NNFrechet {
     std::vector<Vertex> sampleIKNodes(
       Eigen::Isometry3d& curWaypoint,
       int numSolutions);
+    std::vector< std::vector<Vertex> > sampleNNGraphNodes(int numSamples);
     void buildNNGraph();
 
   };

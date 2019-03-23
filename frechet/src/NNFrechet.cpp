@@ -140,6 +140,45 @@ std::vector<Vertex> NNFrechet::sampleIKNodes(
   return sampledNodes;
 }
 
+std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
+  int numSamples
+) {
+  // Record which new nodes were sampled, and which indices from the reference
+  // path they were sampled from.
+  std::vector< std::vector<Vertex> > newSampledNodes;
+  newSampledNodes.resize(mReferencePath.size());
+
+  // We go in the range [1, refIDs.size() - 2] so we ignore the endpoints. They
+  // were handled.
+  int beginRefIndex = 1;
+  int endRefIndex = mReferencePath.size() - 2;
+
+  // Sample indices on the reference path.
+  std::vector<int> indexSampleCounts(mReferencePath.size(), 0);
+  for (int i = 0; i < numSamples; i++)
+  {
+    std::uniform_int_distribution<int> unifrom(beginRefIndex, endRefIndex);
+    int randIndex = unifrom(mRandomGenerator);
+    indexSampleCounts.at(randIndex) = indexSampleCounts.at(randIndex) + 1;
+  }
+
+  // Sample IK solutions for each reference path point based on how many
+  // times the above loop sampled it.
+  for (int sampleIndex = beginRefIndex; sampleIndex <= endRefIndex; sampleIndex++)
+  {
+    int sampleCount = indexSampleCounts.at(sampleIndex);
+    Eigen::Isometry3d& sampleWaypoint = mReferencePath.at(sampleIndex);
+
+    auto sampledNodeVector = sampleIKNodes(sampleWaypoint, sampleCount);
+    for (auto newNode : sampledNodeVector)
+    {
+      newSampledNodes.at(sampleIndex).push_back(newNode);
+    }
+  }
+
+  return newSampledNodes;
+}
+
 void NNFrechet::buildNNGraph()
 {
   VPNameMap nameMap = get(&VProp::name, mNNGraph);
