@@ -92,3 +92,34 @@ std::vector<Vertex> flattenVertexList(
 
   return flattenedList;
 }
+
+std::vector<Vertex> findKnnNodes(
+  Vertex& queryVertex,
+  std::vector<Vertex>& nodes,
+  Graph& nnGraph,
+  int numK,
+  const ompl::base::StateSpacePtr stateSpace
+) {
+  VPStateMap stateMap = get(&VProp::state, nnGraph);
+  auto queryState = stateMap[queryVertex];
+
+  std::vector< std::pair<double, Vertex> > nodeDists;
+  for (auto& singleNode : nodes)
+  {
+    auto nodeState = stateMap[singleNode];
+    double nodeDistance = stateSpace->distance(queryState, nodeState);
+    nodeDists.push_back(std::make_pair(nodeDistance, singleNode));
+  }
+
+  // Sort the pair vector by increasing first key.
+  std::sort(nodeDists.begin(), nodeDists.end());
+
+  std::vector<Vertex> nearestNeighbors;
+  for (int i = 0; i < numK && i < nodeDists.size(); i++)
+  {
+    Vertex closeVertex = nodeDists.at(i).second;
+    nearestNeighbors.push_back(closeVertex);
+  }
+
+  return nearestNeighbors;
+}
