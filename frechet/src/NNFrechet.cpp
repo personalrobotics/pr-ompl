@@ -122,11 +122,10 @@ std::vector<Vertex> NNFrechet::sampleIKNodes(
     // TODO: Right now there's just a hack converting the Eigen::Vec to an OMPL
     // state. Is there a better way to do this?
     std::vector<double> jointStates;
-    auto ikState = mSpace->allocState();
     for (int i = 0; i < mSpace->getDimension(); i++)
-    {
       jointStates.push_back(curSol[i]);
-    }
+
+    auto ikState = mSpace->allocState();
     mSpace->copyFromReals(ikState, jointStates);
     stateMap[newNNVertex] = ikState;
 
@@ -163,51 +162,29 @@ void NNFrechet::buildNNGraph()
   // NOTE: We always sample the start and end vertices since we want the
   // path to reach those. We also sample multiple solutions for each.
   Eigen::Isometry3d& firstWaypoint = mReferencePath.at(0);
-  // TODO: Rest of this.
-  // std::vector<Vertex> firstWaypointVertices = addNewIkNodesStrict(
-  //   diskGraph,
-  //   firstWaypoint,
-  //   numEndpointSamples,
-  //   0, // When sampling IK in disk graph, waypoint id/layer index are the same.
-  //   0,
-  //   diskGraphPoseMap,
-  //   mUseLazyIK);
-  //
-  // // NOTE: In this case, there's no point going on. Just escape.
-  // if (firstWaypointVertices.size() == 0)
-  // {
-  //   return;
-  // }
-  //
-  // for (Vertex firstWaypointNode : firstWaypointVertices)
-  // {
-  //   add_edge(dummyStartVertex, firstWaypointNode, diskGraph);
-  //   mSampledNNGraphNodes.at(0).push_back(firstWaypointNode);
-  // }
-  //
-  // // NOTE: Now repeat eveything we did, but for the last waypoint on the
-  // // reference path.
-  // PoseType lastWaypoint = referencePoses.at(referencePoses.size() - 1);
-  // std::vector<Vertex> lastWaypointVertices = addNewIkNodesStrict(
-  //   diskGraph,
-  //   lastWaypoint,
-  //   numEndpointSamples,
-  //   mSampledNNGraphNodes.size() - 1,
-  //   mSampledNNGraphNodes.size() - 1,
-  //   diskGraphPoseMap,
-  //   mUseLazyIK);
-  //
-  // for (Vertex lastWaypointNode : lastWaypointVertices)
-  // {
-  //   mSampledNNGraphNodes.at(mSampledNNGraphNodes.size() - 1).push_back(lastWaypointNode);
-  //
-  //   add_edge(lastWaypointNode, dummyEndVertex, diskGraph);
-  // }
-  //
-  // int remainingIKBudget = numWaypoints * numIK;
-  // // We already used some of this for the end points.
-  // remainingIKBudget = remainingIKBudget - 2*numEndpointSamples;
-  //
+  std::vector<Vertex> firstWaypointVertices = sampleIKNodes(firstWaypoint, mIKMultiplier);
+
+  for (Vertex firstWaypointNode : firstWaypointVertices)
+  {
+    add_edge(mNNStartNode, firstWaypointNode, mNNGraph);
+    sampledNNGraphNodes.at(0).push_back(firstWaypointNode);
+  }
+
+  // NOTE: Now repeat eveything we did, but for the last waypoint on the
+  // reference path.
+  Eigen::Isometry3d& lastWaypoint = mReferencePath.back();
+  std::vector<Vertex> lastWaypointVertices = sampleIKNodes(lastWaypoint, mIKMultiplier);
+
+  for (Vertex lastWaypointNode : lastWaypointVertices)
+  {
+    sampledNNGraphNodes.back().push_back(lastWaypointNode);
+    add_edge(lastWaypointNode, mNNGoalNode, mNNGraph);
+  }
+
+  int remainingIKBudget = mNumWaypoints * mIKMultiplier;
+  // We already used some of this for the end points.
+  remainingIKBudget -= 2*mIKMultiplier;
+
   // // Sample nodes for waypoints besides the endpoints of the reference path.
   // auto sampledNodes = sampleNNGraphNodes(
   //   remainingIKBudget,
