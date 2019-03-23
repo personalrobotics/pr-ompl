@@ -243,14 +243,14 @@ void NNFrechet::buildNNGraph()
         refIndex + 1,
         sampledNNGraphNodes.size() - 1);
 
-      // // Get neighbors sampled from waypoints further along the reference path.
-      // std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
-      //   nodeSampledAtWaypoint,
-      //   deeperNodes,
-      //   diskGraph,
-      //   mCSpaceDistFunc,
-      //   mNumNearestNeighbors);
-      //
+      // Get neighbors sampled from waypoints further along the reference path.
+      std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
+        nodeSampledAtWaypoint,
+        deeperNodes,
+        mNNGraph,
+        mNumNN,
+        mSpace);
+
       // for (auto& closeNode : cSpaceNeighbors)
       // {
       //   addSubsampledEdge(
