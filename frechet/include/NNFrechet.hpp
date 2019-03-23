@@ -27,55 +27,54 @@
 
 namespace NNFrechet {
 
+  /// Boost Graph definitions.
+  struct VProp
+  {
+    // To identify TPG nodes.
+    std::string name;
+
+    // Robot configuration.
+    ompl::base::State* state;
+
+    // End-effector pose.
+    Eigen::Isometry3d poseEE;
+
+    // For figuring weight of CPG nodes.
+    double frechetDistance;
+  }; // struct VProp
+
+  struct EProp
+  {
+    // TPG Edge Weight.
+    double length;
+
+    // Evaluation marker for LazySP.
+    bool evaluated;
+  }; // struct EProp
+
+  // Graph Description.
+  typedef boost::adjacency_list<boost::hash_setS, boost::vecS, boost::bidirectionalS, VProp, EProp> Graph;
+  typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
+  typedef boost::graph_traits<Graph>::edge_descriptor Edge;
+  typedef boost::graph_traits<Graph>::vertex_iterator VertexIter;
+  typedef boost::graph_traits<Graph>::edge_iterator EdgeIter;
+  typedef boost::graph_traits<Graph>::adjacency_iterator NeighborIter;
+
+  // Vertex Maps
+  typedef boost::property_map<Graph, boost::vertex_index_t VProp::*>::type VertexIndexMap;
+  typedef boost::property_map<Graph, std::string VProp::*>::type VPNameMap;
+  typedef boost::property_map<Graph, ompl::base::State* VProp::*>::type VPStateMap;
+  typedef boost::property_map<Graph, Eigen::Isometry3d VProp::*>::type VPPoseEEMap;
+  typedef boost::property_map<Graph, double VProp::*>::type VPFrechetDistanceMap;
+
+  // Edge Maps
+  typedef boost::property_map<Graph, boost::edge_index_t EProp::*>::type EdgeIndexMap;
+  typedef boost::property_map<Graph, double EProp::*>::type EPLengthMap;
+  typedef boost::property_map<Graph, double EProp::*>::type EPEvaluatedMap;
+
   /// The OMPL Planner class that implements the algorithm
   class NNFrechet: public ompl::base::Planner
   {
-    struct VProp
-    {
-      // To identify TPG nodes.
-      std::string name;
-
-      // Robot configuration.
-      ompl::base::State* state;
-
-      // End-effector pose.
-      Eigen::Isometry3d poseEE;
-
-      // For figuring weight of CPG nodes.
-      double frechetDistance;
-    }; // struct VProp
-
-    struct EProp
-    {
-      // TPG Edge Weight.
-      double length;
-
-      // Evaluation marker for LazySP.
-      bool evaluated;
-    }; // struct EProp
-
-    // Boost Graph definitions
-    typedef boost::adjacency_list<boost::hash_setS, boost::vecS, boost::bidirectionalS, VProp, EProp> Graph;
-    typedef boost::graph_traits<Graph>::vertex_descriptor Vertex;
-    typedef boost::graph_traits<Graph>::edge_descriptor Edge;
-    typedef boost::graph_traits<Graph>::vertex_iterator VertexIter;
-    typedef boost::graph_traits<Graph>::edge_iterator EdgeIter;
-    typedef boost::graph_traits<Graph>::adjacency_iterator NeighborIter;
-
-    // Boost Graph Property Map definitions
-    // Vertex Maps
-    typedef boost::property_map<Graph, boost::vertex_index_t VProp::*>::type VertexIndexMap;
-    typedef boost::property_map<Graph, std::string VProp::*>::type VPNameMap;
-    typedef boost::property_map<Graph, ompl::base::State* VProp::*>::type VPStateMap;
-    typedef boost::property_map<Graph, Eigen::Isometry3d VProp::*>::type VPPoseEEMap;
-    typedef boost::property_map<Graph, double VProp::*>::type VPFrechetDistanceMap;
-
-    // Edge Maps
-    typedef boost::property_map<Graph, boost::edge_index_t EProp::*>::type EdgeIndexMap;
-    typedef boost::property_map<Graph, double EProp::*>::type EPLengthMap;
-    typedef boost::property_map<Graph, double EProp::*>::type EPEvaluatedMap;
-
-    // NNF instance variables.
     std::default_random_engine mRandomGenerator;
 
     /// The pointer to the OMPL state space
@@ -100,7 +99,7 @@ namespace NNFrechet {
     Vertex mTensorStartNode;
     Vertex mTensorGoalNode;
 
-    int mNNSampledID = 0;
+    int mNNIKID = 0;
     int mNNSubsampleID = 0;
 
     // Tensor-product bottleneck vertex.
@@ -116,7 +115,7 @@ namespace NNFrechet {
 
     // Function pointers that are set during creation for FK/IK.
     std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
-    std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> mIkFunc;
+    std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> mIkFunc;
     // Custom task space distance function used to calculate frechet distance.
     std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> mDistanceFunc;
 
@@ -132,12 +131,15 @@ namespace NNFrechet {
     // Setters and getters.
     std::vector<Eigen::Isometry3d> subsampleRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
-    void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc);
+    void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
 
     // Graph construction methods.
     void buildReferenceGraph();
 
+    std::vector<Vertex> sampleIKNodes(
+      Eigen::Isometry3d& curWaypoint,
+      int numSolutions);
     void buildNNGraph();
 
   };

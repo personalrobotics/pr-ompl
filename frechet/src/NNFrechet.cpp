@@ -59,7 +59,7 @@ void NNFrechet::setFKFunc(
 }
 
 void NNFrechet::setIKFunc(
-  std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, std::vector<double>&)> ikFunc
+  std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc
 ) {
   mIkFunc = ikFunc;
 }
@@ -99,6 +99,46 @@ void NNFrechet::buildReferenceGraph()
     else if (i == mReferencePath.size() - 1)
       mRefGoalNode = newRefVertex;
   }
+}
+
+std::vector<Vertex> NNFrechet::sampleIKNodes(
+  Eigen::Isometry3d& curWaypoint,
+  int numSolutions
+) {
+  VPNameMap nameMap = get(&VProp::name, mNNGraph);
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
+
+  std::vector<Vertex> sampledNodes;
+  std::vector<Eigen::VectorXd> ikSolutions = mIkFunc(curWaypoint, numSolutions);
+
+  for (auto curSol : ikSolutions)
+  {
+    Vertex newNNVertex = add_vertex(mNNGraph);
+
+    Eigen::Isometry3d curPose = mFkFunc(curSol);
+    poseMap[newNNVertex] = curPose;
+
+    // TODO: Right now there's just a hack converting the Eigen::Vec to an OMPL
+    // state. Is there a better way to do this?
+    std::vector<double> jointStates;
+    auto ikState = mSpace->allocState();
+    for (int i = 0; i < mSpace->getDimension(); i++)
+    {
+      jointStates.push_back(curSol[i]);
+    }
+    mSpace->copyFromReals(ikState, jointStates);
+    stateMap[newNNVertex] = ikState;
+
+    // Node meta-data.
+    std::string newNodeName = "n." + std::to_string(mNNIKID);
+    nameMap[newNNVertex] = newNodeName;
+    mNNIKID++;
+
+    sampledNodes.push_back(newNNVertex);
+  }
+
+  return sampledNodes;
 }
 
 void NNFrechet::buildNNGraph()
