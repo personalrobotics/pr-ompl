@@ -143,3 +143,18 @@ std::vector<Vertex> getGraphVertices(Graph& graph)
 
   return graphVertices;
 }
+
+std::vector<Vertex> getNeighbors(const Vertex& v, Graph& g)
+{
+  std::vector<Vertex> neighbors;
+  NeighborIter ai;
+  NeighborIter aiEnd;
+
+  for (tie(ai, aiEnd) = adjacent_vertices(v, g); ai != aiEnd; ++ai)
+  {
+    Vertex curNeighbor = *ai;
+    neighbors.push_back(curNeighbor);
+  }
+
+  return neighbors;
+}

@@ -90,6 +90,9 @@ namespace NNFrechet {
     void addTensorProductNodes(
       std::vector<Vertex>& refNodes,
       std::vector<Vertex>& nnNodes);
+    void connectTensorProductNodes(
+      std::vector<Vertex>& refNodes,
+      std::vector<Vertex>& nnNodes);
     void buildTensorProductGraph();
 
   };
