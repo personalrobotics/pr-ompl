@@ -178,6 +178,80 @@ std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
   return newSampledNodes;
 }
 
+std::vector<Vertex> NNFrechet::addSubsampledEdge(
+  Vertex& firstNNVertex,
+  Vertex& secondNNVertex
+) {
+  VPNameMap nameMap = get(&VProp::name, mNNGraph);
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
+
+  // Handle the cases where edge is not subsampled.
+  if (firstNNVertex == mNNStartNode || secondNNVertex == mNNGoalNode)
+  {
+   add_edge(firstNNVertex, secondNNVertex, mNNGraph);
+   return std::vector<Vertex>();
+  }
+
+  std::vector<Vertex> addedVertices;
+  std::vector<ompl::base::State*> intermediateStates;
+  std::vector<Eigen::Isometry3d> intermediatePoses;
+
+  auto firstState = stateMap[firstNNVertex];
+  auto secondState = stateMap[secondNNVertex];
+
+  // Interpolate the intermediate configs.
+  for (int i = 0; i < mDiscretization; i++)
+  {
+    auto curIntermediate = mSpace->allocState();
+    mSpace->interpolate(firstState, secondState,
+      (1.0 + i)/(mDiscretization+1), curIntermediate);
+    intermediateStates.push_back(curIntermediate);
+  }
+
+  for (auto curIntermediate : intermediateStates)
+  {
+    // TODO: This exchange between OMPL and Eigen is a pain in the ass. How
+    // should it be handled?
+    std::vector<double> jointStates;
+    mSpace->copyToReals(jointStates, curIntermediate);
+
+    Eigen::VectorXd curConfig(mSpace->getDimension());
+    for (int i = 0; i < mSpace->getDimension(); i++)
+      curConfig[i] = jointStates[i];
+
+    Eigen::Isometry3d curFK = mFkFunc(curConfig);
+    intermediatePoses.push_back(curFK);
+  }
+
+  Vertex prevVertex = firstNNVertex;
+  for (int i = 0; i < mDiscretization; i++)
+  {
+    // New node creation and data insertion.
+    Vertex newSubVertex = add_vertex(mNNGraph);
+    std::string newNodeName = "a" + std::to_string(mNNSubsampleID);
+
+    nameMap[newSubVertex] = newNodeName;
+    stateMap[newSubVertex] = intermediateStates[i];
+    poseMap[newSubVertex] = intermediatePoses[i];
+
+    addedVertices.push_back(newSubVertex);
+
+    // Add an "internal" edge resulting from subsampling an original edge.
+    add_edge(prevVertex, newSubVertex, mNNGraph);
+    // And if we reached the end...
+    if (i == mDiscretization - 1)
+    {
+      add_edge(newSubVertex, secondNNVertex, mNNGraph);
+    }
+
+    prevVertex = newSubVertex;
+    mNNSubsampleID++;
+  }
+
+  return addedVertices;
+}
+
 void NNFrechet::buildNNGraph()
 {
   VPNameMap nameMap = get(&VProp::name, mNNGraph);

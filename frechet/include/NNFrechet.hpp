@@ -82,6 +82,9 @@ namespace NNFrechet {
       Eigen::Isometry3d& curWaypoint,
       int numSolutions);
     std::vector< std::vector<Vertex> > sampleNNGraphNodes(int numSamples);
+    std::vector<Vertex> addSubsampledEdge(
+      Vertex& firstNNVertex,
+      Vertex& secondNNVertex);
     void buildNNGraph();
 
   };
