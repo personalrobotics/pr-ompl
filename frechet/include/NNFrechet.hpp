@@ -87,6 +87,8 @@ namespace NNFrechet {
       Vertex& secondNNVertex);
     void buildNNGraph();
 
+    void buildTensorProductGraph();
+
   };
 
 } // namespace LRAstar

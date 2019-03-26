@@ -326,6 +326,37 @@ void NNFrechet::buildNNGraph()
   }
 }
 
+void NNFrechet::buildTensorProductGraph()
+{
+  std::vector<Vertex> referenceVertices = getGraphVertices(mReferenceGraph);
+  std::vector<Vertex> layerVertices = getGraphVertices(mNNGraph);
+
+  std::cout << "[INFO]: Ref Graph has " << referenceVertices.size() << " nodes."
+    << std::endl;
+  std::cout << "[INFO]: NN Graph has " << layerVertices.size() << " nodes."
+    << std::endl;
+
+  // // Set up the cross product graph with the correct nodes.
+  // addCrossProductNodes(
+  //   referenceGraph,
+  //   layeredGraph,
+  //   referenceVertices,
+  //   layerVertices,
+  //   pathId,
+  //   crossStartVertexName,
+  //   crossEndVertexName,
+  //   refPoseMap,
+  //   layerPoseMap);
+  //
+  // // And connect them up to eachother.
+  // connectCrossProductNodes(
+  //   referenceGraph,
+  //   layeredGraph,
+  //   referenceVertices,
+  //   layerVertices,
+  //   pathId);
+}
+
 
 
 }

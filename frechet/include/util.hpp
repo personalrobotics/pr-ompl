@@ -123,3 +123,17 @@ std::vector<Vertex> findKnnNodes(
 
   return nearestNeighbors;
 }
+
+std::vector<Vertex> getGraphVertices(Graph& graph)
+{
+  std::vector<Vertex> graphVertices;
+
+  std::pair<VertexIter, VertexIter> vp;
+  for (vp = vertices(graph); vp.first != vp.second; ++vp.first)
+  {
+    Vertex curVertex = *vp.first;
+    graphVertices.push_back(curVertex);
+  }
+
+  return graphVertices;
+}
