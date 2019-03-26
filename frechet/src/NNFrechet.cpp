@@ -486,13 +486,8 @@ void NNFrechet::buildTensorProductGraph()
   // Set up the tensor product graph with the correct nodes.
   addTensorProductNodes(refNodes, nnNodes);
 
-  // // And connect them up to eachother.
-  // connectCrossProductNodes(
-  //   referenceGraph,
-  //   layeredGraph,
-  //   referenceVertices,
-  //   layerVertices,
-  //   pathId);
+  // And connect them up to eachother.
+  connectTensorProductNodes(refNodes, nnNodes);
 }
 
 
