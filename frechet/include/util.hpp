@@ -28,6 +28,11 @@ struct VProp
 
   // For figuring weight of TPG nodes.
   double frechet;
+
+  // For recovering the final motion plan.
+  // HACK: Assumes Vertex to be unsigned long int.
+  unsigned long int nnComponent;
+
 }; // struct VProp
 
 struct EProp
@@ -53,6 +58,7 @@ typedef boost::property_map<Graph, std::string VProp::*>::type VPNameMap;
 typedef boost::property_map<Graph, ompl::base::State* VProp::*>::type VPStateMap;
 typedef boost::property_map<Graph, Eigen::Isometry3d VProp::*>::type VPPoseEEMap;
 typedef boost::property_map<Graph, double VProp::*>::type VPFrechetMap;
+typedef boost::property_map<Graph, Vertex VProp::*>::type VPNNComponentMap;
 
 // Edge Maps
 typedef boost::property_map<Graph, boost::edge_index_t EProp::*>::type EdgeIndexMap;

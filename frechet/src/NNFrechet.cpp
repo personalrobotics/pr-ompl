@@ -335,8 +335,11 @@ void NNFrechet::addTensorProductNodes(
 
   VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
   VPPoseEEMap nnPoseMap = get(&VProp::poseEE, mNNGraph);
+  VPStateMap nnStateMap = get(&VProp::state, mNNGraph);
 
   VPNameMap tensorNameMap = get(&VProp::name, mTensorProductGraph);
+  VPStateMap tensorStateMap = get(&VProp::state, mTensorProductGraph);
+  VPNNComponentMap nnComponentMap = get(&VProp::nnComponent, mTensorProductGraph);
   VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
 
   int numTPGNodes = 0;
@@ -359,6 +362,10 @@ void NNFrechet::addTensorProductNodes(
       tensorNameMap[newTensorNode] = tensorVertexName;
       frechetMap[newTensorNode] = frechetWeight;
       mNameToVertex[tensorVertexName] = newTensorNode;
+
+      // Also store nn information to recover plan later.
+      tensorStateMap[newTensorNode] = nnStateMap[curNNNode];
+      nnComponentMap[newTensorNode] = curNNNode;
 
       // Save the start and goal nodes of the TPG.
       if (curRefNode == mRefStartNode && curNNNode == mNNStartNode)
