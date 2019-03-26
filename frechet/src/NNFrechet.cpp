@@ -178,7 +178,7 @@ std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
   return newSampledNodes;
 }
 
-std::vector<Vertex> NNFrechet::addSubsampledEdge(
+void NNFrechet::addSubsampledEdge(
   Vertex& firstNNVertex,
   Vertex& secondNNVertex
 ) {
@@ -190,10 +190,9 @@ std::vector<Vertex> NNFrechet::addSubsampledEdge(
   if (firstNNVertex == mNNStartNode || secondNNVertex == mNNGoalNode)
   {
    add_edge(firstNNVertex, secondNNVertex, mNNGraph);
-   return std::vector<Vertex>();
+   return;
   }
 
-  std::vector<Vertex> addedVertices;
   std::vector<ompl::base::State*> intermediateStates;
   std::vector<Eigen::Isometry3d> intermediatePoses;
 
@@ -235,8 +234,6 @@ std::vector<Vertex> NNFrechet::addSubsampledEdge(
     stateMap[newSubVertex] = intermediateStates[i];
     poseMap[newSubVertex] = intermediatePoses[i];
 
-    addedVertices.push_back(newSubVertex);
-
     // Add an "internal" edge resulting from subsampling an original edge.
     add_edge(prevVertex, newSubVertex, mNNGraph);
     // And if we reached the end...
@@ -248,8 +245,6 @@ std::vector<Vertex> NNFrechet::addSubsampledEdge(
     prevVertex = newSubVertex;
     mNNSubsampleID++;
   }
-
-  return addedVertices;
 }
 
 void NNFrechet::buildNNGraph()
@@ -325,21 +320,8 @@ void NNFrechet::buildNNGraph()
         mNumNN,
         mSpace);
 
-      // for (auto& closeNode : cSpaceNeighbors)
-      // {
-      //   addSubsampledEdge(
-      //     diskGraph,
-      //     nodeSampledAtWaypoint,
-      //     closeNode,
-      //     diskGraphPoseMap,
-      //     // NOTE: This isn't perfect, but trying to match the discretization
-      //     // of the reference path and roadmap paths exactly can prove so
-      //     // expensive that it's really not worth it.
-      //     discretization,
-      //     // Remember, ref path indices and layer indices are the same now!
-      //     refIndex,
-      //     mUseLazyIK);
-      // }
+      for (auto& closeNode : cSpaceNeighbors)
+        addSubsampledEdge(nodeSampledAtWaypoint, closeNode);
     }
   }
 }
