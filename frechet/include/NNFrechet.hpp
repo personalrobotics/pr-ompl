@@ -28,6 +28,12 @@ namespace NNFrechet {
     // Map name of TPG Node -> Vertex.
     std::unordered_map<std::string, Vertex> mNameToVertex;
 
+    // Keep around EACH path's corresponding set of edges in the tensor product
+    // graph. By making this a map of [U_NN, V_NN] -> {E_TPG}, we can
+    // "knock out" edges quickly in the TPG that correspond to U -> V in the
+    // NN Graph. This is an *optimization* when handling a collision.
+    std::unordered_map< std::string, std::vector<Edge> > mNNToTPGEdges;
+
     // Reference path we were given.
     std::vector<Eigen::Isometry3d> mReferencePath;
 
@@ -90,6 +96,7 @@ namespace NNFrechet {
     void addTensorProductNodes(
       std::vector<Vertex>& refNodes,
       std::vector<Vertex>& nnNodes);
+    void addTensorProductEdge(Vertex& v1, Vertex& v2);
     void connectTensorProductNodes(
       std::vector<Vertex>& refNodes,
       std::vector<Vertex>& nnNodes);

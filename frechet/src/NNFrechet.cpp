@@ -381,6 +381,40 @@ void NNFrechet::addTensorProductNodes(
   std::cout << "[INFO]: TPG has " << numTPGNodes << " nodes." << std::endl;
 }
 
+void NNFrechet::addTensorProductEdge(
+  Vertex& v1,
+  Vertex& v2
+) {
+  VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
+  EPLengthMap edgeLengthMap = get(&EProp::length, mTensorProductGraph);
+  VPNNComponentMap nnComponentMap = get(&VProp::nnComponent, mTensorProductGraph);
+
+  std::pair<Edge, bool> edgePair = add_edge(v1, v2, mTensorProductGraph);
+  bool edgeAdded = edgePair.second;
+
+  if (edgeAdded)
+  {
+    Edge newEdge = edgePair.first;
+    edgeLengthMap[newEdge] = std::max(frechetMap[v1], frechetMap[v2]);
+
+    Vertex nnU = nnComponentMap[v1];
+    Vertex nnV = nnComponentMap[v2];
+
+    // This actually represents an edge in the roadmap.
+    if (nnU != nnV)
+    {
+      VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
+      std::string nnEdgeString = nnNameMap[nnU] + "_" + nnNameMap[nnV];
+
+      // Optimization to quickly kill lots of nodes in the TPG using LazySP.
+      if (!mNNToTPGEdges.count(nnEdgeString))
+        mNNToTPGEdges[nnEdgeString] = std::vector<Edge>();
+
+      mNNToTPGEdges[nnEdgeString].push_back(newEdge);
+    }
+  }
+}
+
 // void NNFrechet::connectTensorProductNodes(
 //   std::vector<Vertex>& refNodes,
 //   std::vector<Vertex>& nnNodes
