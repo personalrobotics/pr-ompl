@@ -415,76 +415,63 @@ void NNFrechet::addTensorProductEdge(
   }
 }
 
-// void NNFrechet::connectTensorProductNodes(
-//   std::vector<Vertex>& refNodes,
-//   std::vector<Vertex>& nnNodes
-// ) {
-//   VPNameMap refNameMap = get(&VProp::name, referenceGraph);
-//   VPNameMap layerNameMap = get(&VProp::name, layeredGraph);
-//   VPNameMap crossNameMap = get(&VProp::name, crossProductGraph);
-//
-//   for (const auto& curRefVertex : referenceVertices)
-//   {
-//     std::string refVertexName = refNameMap[curRefVertex];
-//     std::vector<Vertex> refVertexNeighbors = getNeighbors(curRefVertex, referenceGraph);
-//
-//     for (const auto& curLayerVertex : layerVertices)
-//     {
-//       std::string layerVertexName = layerNameMap[curLayerVertex];
-//       std::vector<Vertex> layerVertexNeighbors = getNeighbors(curLayerVertex, layeredGraph);
-//
-//       std::string curCrossVertexName = getCrossProductNodeName(
-//         refVertexName,
-//         layerVertexName,
-//         pathId
-//       );
-//       Vertex curCrossVertex = nameToVertex[curCrossVertexName];
-//
-//       for (Vertex refNeighbor : refVertexNeighbors)
-//       {
-//         std::string refNeighborName = refNameMap[refNeighbor];
-//         std::string crossNeighborName = getCrossProductNodeName(
-//           refNeighborName,
-//           layerVertexName,
-//           pathId
-//         );
-//         Vertex crossNeighborVertex = nameToVertex[crossNeighborName];
-//
-//         addCrossProductEdge(curCrossVertex, crossNeighborVertex, pathId);
-//       }
-//
-//       for (Vertex layerNeighbor : layerVertexNeighbors)
-//       {
-//         std::string layerNeighborName = layerNameMap[layerNeighbor];
-//         std::string crossNeighborName = getCrossProductNodeName(
-//           refVertexName,
-//           layerNeighborName,
-//           pathId
-//         );
-//         Vertex crossNeighborVertex = nameToVertex[crossNeighborName];
-//
-//         addCrossProductEdge(curCrossVertex, crossNeighborVertex, pathId);
-//       }
-//
-//       for (Vertex refNeighbor : refVertexNeighbors)
-//       {
-//         for (Vertex layerNeighbor : layerVertexNeighbors)
-//         {
-//           std::string refNeighborName = refNameMap[refNeighbor];
-//           std::string layerNeighborName = layerNameMap[layerNeighbor];
-//           std::string crossNeighborName = getCrossProductNodeName(
-//             refNeighborName,
-//             layerNeighborName,
-//             pathId
-//           );
-//           Vertex crossNeighborVertex = nameToVertex[crossNeighborName];
-//
-//           addCrossProductEdge(curCrossVertex, crossNeighborVertex, pathId);
-//         }
-//       }
-//     }
-//   }
-// }
+void NNFrechet::connectTensorProductNodes(
+  std::vector<Vertex>& refNodes,
+  std::vector<Vertex>& nnNodes
+) {
+  VPNameMap refNameMap = get(&VProp::name, mReferenceGraph);
+  VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
+  VPNameMap tensorNameMap = get(&VProp::name, mTensorProductGraph);
+
+  for (const auto& curRefNode : refNodes)
+  {
+    std::string refNodeName = refNameMap[curRefNode];
+    std::vector<Vertex> refNodeNeighbors = getNeighbors(curRefNode, mReferenceGraph);
+
+    for (const auto& curNNNode : nnNodes)
+    {
+      std::string nnNodeName = nnNameMap[curNNNode];
+      std::vector<Vertex> nnNodeNeighbors = getNeighbors(curNNNode, mNNGraph);
+
+      std::string tensorNodeName = refNodeName + "_" + nnNodeName;
+      Vertex curTensorNode = mNameToVertex[tensorNodeName];
+
+      // Option A: Take a step on the reference graph.
+      for (Vertex refNeighbor : refNodeNeighbors)
+      {
+        std::string refNeighborName = refNameMap[refNeighbor];
+        std::string tensorNeighborName = refNeighborName + "_" + nnNodeName;
+
+        Vertex tensorNeighborNode = mNameToVertex[tensorNeighborName];
+        addTensorProductEdge(curTensorNode, tensorNeighborNode);
+      }
+
+      // Option B: Take a step on the NN graph.
+      for (Vertex nnNeighbor : nnNodeNeighbors)
+      {
+        std::string nnNeighborName = nnNameMap[nnNeighbor];
+        std::string tensorNeighborName = refNodeName + "_" + nnNeighborName;
+
+        Vertex tensorNeighborNode = mNameToVertex[tensorNeighborName];
+        addTensorProductEdge(curTensorNode, tensorNeighborNode);
+      }
+
+      // Option C: Take a step on *both*.
+      for (Vertex refNeighbor : refNodeNeighbors)
+      {
+        for (Vertex nnNeighbor : nnNodeNeighbors)
+        {
+          std::string refNeighborName = refNameMap[refNeighbor];
+          std::string nnNeighborName = nnNameMap[nnNeighbor];
+          std::string tensorNeighborName = refNeighborName + "_" + nnNeighborName;
+
+          Vertex tensorNeighborNode = mNameToVertex[tensorNeighborName];
+          addTensorProductEdge(curTensorNode, tensorNeighborNode);
+        }
+      }
+    }
+  }
+}
 
 void NNFrechet::buildTensorProductGraph()
 {
