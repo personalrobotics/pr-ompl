@@ -87,6 +87,9 @@ namespace NNFrechet {
       Vertex& secondNNVertex);
     void buildNNGraph();
 
+    void addTensorProductNodes(
+      std::vector<Vertex>& refNodes,
+      std::vector<Vertex>& nnNodes);
     void buildTensorProductGraph();
 
   };

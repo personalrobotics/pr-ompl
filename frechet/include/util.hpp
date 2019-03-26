@@ -26,8 +26,8 @@ struct VProp
   // End-effector pose.
   Eigen::Isometry3d poseEE;
 
-  // For figuring weight of CPG nodes.
-  double frechetDistance;
+  // For figuring weight of TPG nodes.
+  double frechet;
 }; // struct VProp
 
 struct EProp
@@ -52,7 +52,7 @@ typedef boost::property_map<Graph, boost::vertex_index_t VProp::*>::type VertexI
 typedef boost::property_map<Graph, std::string VProp::*>::type VPNameMap;
 typedef boost::property_map<Graph, ompl::base::State* VProp::*>::type VPStateMap;
 typedef boost::property_map<Graph, Eigen::Isometry3d VProp::*>::type VPPoseEEMap;
-typedef boost::property_map<Graph, double VProp::*>::type VPFrechetDistanceMap;
+typedef boost::property_map<Graph, double VProp::*>::type VPFrechetMap;
 
 // Edge Maps
 typedef boost::property_map<Graph, boost::edge_index_t EProp::*>::type EdgeIndexMap;

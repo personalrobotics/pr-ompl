@@ -326,28 +326,67 @@ void NNFrechet::buildNNGraph()
   }
 }
 
+void NNFrechet::addTensorProductNodes(
+  std::vector<Vertex>& refNodes,
+  std::vector<Vertex>& nnNodes
+) {
+  VPNameMap refNameMap = get(&VProp::name, mReferenceGraph);
+  VPPoseEEMap refPoseMap = get(&VProp::poseEE, mReferenceGraph);
+
+  VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
+  VPPoseEEMap nnPoseMap = get(&VProp::poseEE, mNNGraph);
+
+  VPNameMap tensorNameMap = get(&VProp::name, mTensorProductGraph);
+  VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
+
+  int numTPGNodes = 0;
+  for (const auto& curRefNode : refNodes)
+  {
+    std::string refNodeName = refNameMap[curRefNode];
+
+    for (const auto& curNNNode : nnNodes)
+    {
+      std::string nnNodeName = nnNameMap[curNNNode];
+
+      Vertex newTensorNode = add_vertex(mTensorProductGraph);
+      std::string tensorVertexName = refNodeName + "_" + nnNodeName;
+
+      // Compute the Frechet weight of this node.
+      Eigen::Isometry3d refPose = refPoseMap[curRefNode];
+      Eigen::Isometry3d nnPose = nnPoseMap[curNNNode];
+      double frechetWeight = mDistanceFunc(refPose, nnPose);
+
+      tensorNameMap[newTensorNode] = tensorVertexName;
+      frechetMap[newTensorNode] = frechetWeight;
+      mNameToVertex[tensorVertexName] = newTensorNode;
+
+      // Save the start and goal nodes of the TPG.
+      if (curRefNode == mRefStartNode && curNNNode == mNNStartNode)
+        mTensorStartNode = newTensorNode;
+
+      if (curRefNode == mRefGoalNode && curNNNode == mNNGoalNode)
+        mTensorGoalNode = newTensorNode;
+
+      numTPGNodes++;
+    }
+  }
+
+  std::cout << "[INFO]: TPG has " << numTPGNodes << " nodes." << std::endl;
+}
+
 void NNFrechet::buildTensorProductGraph()
 {
-  std::vector<Vertex> referenceVertices = getGraphVertices(mReferenceGraph);
-  std::vector<Vertex> layerVertices = getGraphVertices(mNNGraph);
+  std::vector<Vertex> refNodes = getGraphVertices(mReferenceGraph);
+  std::vector<Vertex> nnNodes = getGraphVertices(mNNGraph);
 
-  std::cout << "[INFO]: Ref Graph has " << referenceVertices.size() << " nodes."
+  std::cout << "[INFO]: Ref Graph has " << refNodes.size() << " nodes."
     << std::endl;
-  std::cout << "[INFO]: NN Graph has " << layerVertices.size() << " nodes."
+  std::cout << "[INFO]: NN Graph has " << nnNodes.size() << " nodes."
     << std::endl;
 
-  // // Set up the cross product graph with the correct nodes.
-  // addCrossProductNodes(
-  //   referenceGraph,
-  //   layeredGraph,
-  //   referenceVertices,
-  //   layerVertices,
-  //   pathId,
-  //   crossStartVertexName,
-  //   crossEndVertexName,
-  //   refPoseMap,
-  //   layerPoseMap);
-  //
+  // Set up the tensor product graph with the correct nodes.
+  addTensorProductNodes(refNodes, nnNodes);
+
   // // And connect them up to eachother.
   // connectCrossProductNodes(
   //   referenceGraph,
