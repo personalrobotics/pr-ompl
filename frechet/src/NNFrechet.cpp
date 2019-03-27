@@ -490,6 +490,26 @@ void NNFrechet::buildTensorProductGraph()
   connectTensorProductNodes(refNodes, nnNodes);
 }
 
+void NNFrechet::initStructures()
+{
+  // Build all three graphs.
+  buildReferenceGraph();
+  buildNNGraph();
+  buildTensorProductGraph();
+
+  std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
+
+  // TODO.
+  // lpaStar.initLPA(
+  //   crossProductGraph,
+  //   crossProductStartVertex,
+  //   crossProductEndVertex,
+  //   weightFunc,
+  //   predFunc,
+  //   succFunc);
+  // std::cout << "[INFO]: LPA* structure initialized." << std::endl;
+}
+
 
 
 }

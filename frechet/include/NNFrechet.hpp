@@ -102,6 +102,8 @@ namespace NNFrechet {
       std::vector<Vertex>& nnNodes);
     void buildTensorProductGraph();
 
+    void initStructures();
+
   };
 
 } // namespace LRAstar
