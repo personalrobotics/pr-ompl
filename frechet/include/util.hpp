@@ -158,3 +158,17 @@ std::vector<Vertex> getNeighbors(const Vertex& v, Graph& g)
 
   return neighbors;
 }
+
+std::vector<Vertex> getPredecessors(const Vertex& v, Graph& g)
+{
+  std::vector<Vertex> predecessors;
+  boost::graph_traits<Graph>::in_edge_iterator ei, ei_end;
+
+  for (tie(ei, ei_end) = in_edges(v, g); ei != ei_end; ++ei)
+  {
+    Vertex curPred = source(*ei, g);
+    predecessors.push_back(curPred);
+  }
+
+  return predecessors;
+}

@@ -58,98 +58,58 @@ Vertex LPAStar::popPQ(Graph& g)
 void LPAStar::initLPA(
   Graph& g,
   Vertex& start,
-  Vertex& goal,
-  std::function<double(Edge& cpgEdge)> edgeWeightFunc,
-  std::function<std::vector<Vertex>(Vertex& cpgNode)> predFunc,
-  std::function<std::vector<Vertex>(Vertex& cpgNode)> succFunc
+  Vertex& goal
 ) {
-  // NOTE: Calling this twice resets the LPA* structures.
-  mEdgeWeightFunc = edgeWeightFunc;
-  mPredFunc = predFunc;
-  mSuccFunc = succFunc;
-
-  pq.reset();
-  distance.clear();
-  distanceLookahead.clear();
-  prev.clear();
-
-  startNode = start;
-  goalNode = goal;
+  mStartNode = start;
+  mGoalNode = goal;
 
   std::vector<Vertex> initNodes = getGraphVertices(g);
   for (auto& vertex : initNodes)
   {
-    distance[vertex] = std::make_pair(infVal, infVal);
-    distanceLookahead[vertex] = std::make_pair(infVal, infVal);
+    mDistance[vertex] = mInfVal;
+    mDistanceLookahead[vertex] = mInfVal;
   }
 
-  distanceLookahead[startNode] = std::make_pair(0, 0);
-  insertPQ(g, startNode, std::make_pair(0, 0));
+  mDistanceLookahead[mStartNode] = 0.0;
+  insertPQ(g, mStartNode, 0.0);
 }
 
-void LPAStar::addNewNodes(std::vector<Vertex>& newNodes)
-{
-  for (auto newVertex : newNodes)
-  {
-    distance[newVertex] = std::make_pair(infVal, infVal);
-    distanceLookahead[newVertex] = std::make_pair(infVal, infVal);
-  }
-}
-
-std::pair<double, double> LPAStar::combineCost(
-  std::pair<double, double> priority,
-  double uvEdgeCost,
-  double vFrechetWeight
-) {
-  std::pair<double, double> newPriority;
-  newPriority.first = std::max(priority.first, uvEdgeCost);
-
-  // We always do bottleneck search, but we break ties by taking the path that
-  // minimizes the SUM of deviations along the parameterization between the
-  // Roadmap and Reference graphs. This means we need to accumulate the Frechet
-  // Weight of each node V whenever we take an edge U ---> V in the CPG.
-  newPriority.second = priority.second + vFrechetWeight;
-
-  return newPriority;
-}
-
-std::pair<double, double> LPAStar::calculateKey(Vertex& node)
+double LPAStar::calculateKey(Vertex& node)
 {
   return std::min(getDistance(node), getDistanceLookahead(node));
 }
 
 void LPAStar::updateVertex(Graph& g, Vertex& u)
 {
-  if (u != startNode)
-  {
-    std::vector< std::pair<double, double> > lookaheadValues;
+  EPLengthMap edgeLengthMap = get(&EProp::length, g);
 
-    VPFrechetDistanceMap frechetMap = get(&VProp::frechetDistance, g);
+  if (u != mStartNode)
+  {
+    std::vector<double> lookaheadValues;
+
+    VPFrechetMap frechetMap = get(&VProp::frechet, g);
     double uFrechetWeight = frechetMap[u];
 
-    auto preds = mPredFunc(u);
+    auto preds = getPredecessors(u, g);
     for (auto& curPred : preds)
     {
       Edge curEdge = boost::edge(curPred, u, g).first;
-      double edgeWeight = mEdgeWeightFunc(curEdge);
-      std::pair<double, double> curLookahead = combineCost(
-        getDistance(curPred),
-        edgeWeight,
-        uFrechetWeight);
+      double edgeWeight = edgeLengthMap[curEdge];
+      double curLookahead = std::max(getDistance(curPred), edgeWeight);
 
       lookaheadValues.push_back(curLookahead);
     }
 
     if (lookaheadValues.size() == 0)
     {
-      distanceLookahead[u] = std::make_pair(infVal, infVal);
+      mDistanceLookahead[u] = mInfVal;
     } else {
-      std::vector< std::pair<double, double> >::iterator it = std::min_element(
+      std::vector<double>::iterator it = std::min_element(
         std::begin(lookaheadValues),
         std::end(lookaheadValues));
 
-      std::pair<double, double> minLookahead = *it;
-      distanceLookahead[u] = minLookahead;
+      double minLookahead = *it;
+      mDistanceLookahead[u] = minLookahead;
     }
   }
 

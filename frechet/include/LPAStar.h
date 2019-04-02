@@ -69,19 +69,15 @@ class LPAStar
       Vertex& start,
       Vertex& goal);
 
-    // Add new nodes in the graph. Assume that client will call update methods
-    // for those nodes on their own.
-    void addNewNodes(std::vector<Vertex>& newNodes);
-
     // Get key of a node.
     double calculateKey(Vertex& node);
 
-    // this must be called called when u's dist and/or lookahead dist
+    // This must be called called when u's dist and/or lookahead dist
     // (and therefore consistency) may have been changed
     // this ensures u is in the queue correctly
     void updateVertex(Graph& g, Vertex& u);
 
-    // this is called to update vertex v due to either:
+    // This is called to update vertex v due to either:
     // - u_dist being updated OR
     // - uv_weight being updated
     // it will recalculate v's lookahead distance
