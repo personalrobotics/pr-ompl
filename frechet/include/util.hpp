@@ -1,3 +1,6 @@
+#ifndef UTIL_
+#define UTIL_
+
 #include <Eigen/Dense>
 
 #include <boost/graph/adjacency_list.hpp>
@@ -172,3 +175,5 @@ std::vector<Vertex> getPredecessors(const Vertex& v, Graph& g)
 
   return predecessors;
 }
+
+#endif // UTIL_HPP_

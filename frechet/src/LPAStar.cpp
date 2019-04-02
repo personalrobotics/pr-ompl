@@ -205,40 +205,24 @@ bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
    }
 }
 
-std::vector<Vertex>  LPAStar::computeShortestPath(Graph& g, double bound)
+std::vector<Vertex>  LPAStar::computeShortestPath(Graph& g)
 {
-  // NOTE: Needed for bounding due to wierd dual cost.
-  std::pair<double, double> boundPair = std::make_pair(bound, infVal);
-
   // NOTE: Top element of PQ is now allowed to have *equal* cost to that of the
   // goal since we are doing bottleneck search. Otherwise, nothing will get
   // popped from the PQ after an edge change and update, causing nothing in the
   // prev map to get rewired.
-  while (!isEmptyPQ() && (peekPQ() <= calculateKey(goalNode)
-     || getDistanceLookahead(goalNode) != getDistance(goalNode)))
+  while (!isEmptyPQ() && (peekPQ() <= calculateKey(mGoalNode)
+     || getDistanceLookahead(mGoalNode) != getDistance(mGoalNode)))
   {
-    std::pair<double, double> curCost = peekPQ();
-    // NOTE: LPA* star processes non-decreasing keys, so use a bound to abort
-    // early if one is set.
-    if (bound > 0.0 && curCost > boundPair)
-    {
-      Vertex dummy;
-      std::vector<Vertex> dummyPath;
-      dummyPath.push_back(dummy);
-      dummyPath.push_back(dummy);
-
-      mAbortCost = curCost.first;
-      return dummyPath;
-    }
-
+     double curCost = peekPQ();
      Vertex u = popPQ(g);
 
      if (getDistance(u) > getDistanceLookahead(u))
      {
         // Force it to be consistent.
-        distance[u] = getDistanceLookahead(u);
+        mDistance[u] = getDistanceLookahead(u);
 
-        std::vector<Vertex> neighbors = mSuccFunc(u);
+        std::vector<Vertex> neighbors = getNeighbors(u, g);
         for (auto successor : neighbors)
         {
           if (updatePredecessor(g, u, successor))
@@ -247,15 +231,15 @@ std::vector<Vertex>  LPAStar::computeShortestPath(Graph& g, double bound)
      }
      else
      {
-      distance[u] = std::make_pair(infVal, infVal);
-      updateVertex(g, u);
+        mDistance[u] = mInfVal;
+        updateVertex(g, u);
 
-      std::vector<Vertex> neighbors = mSuccFunc(u);
-      for (auto successor : neighbors)
-      {
-        if (updatePredecessor(g, u, successor))
-          updateVertex(g, successor);
-      }
+        std::vector<Vertex> neighbors = getNeighbors(u, g);
+        for (auto successor : neighbors)
+        {
+          if (updatePredecessor(g, u, successor))
+            updateVertex(g, successor);
+        }
      }
   }
 
@@ -267,19 +251,19 @@ std::vector<Vertex> LPAStar::followBackpointers()
 {
   // Check if we actually reached the goal vertex. If we didn't, fail and
   // cry (by returning an empty vector).
-  if (getDistance(goalNode).first == infVal)
+  if (getDistance(mGoalNode) == mInfVal)
     return std::vector<Vertex>();
 
   std::vector<Vertex> finalPath;
-  finalPath.push_back(goalNode);
-  Vertex curBack = prev[goalNode];
+  finalPath.push_back(mGoalNode);
+  Vertex curBack = mPrev[mGoalNode];
 
-  while (curBack != startNode)
+  while (curBack != mStartNode)
   {
     finalPath.push_back(curBack);
-    curBack = prev[curBack];
+    curBack = mPrev[curBack];
   }
-  finalPath.push_back(startNode);
+  finalPath.push_back(mStartNode);
 
   std::reverse(finalPath.begin(),finalPath.end());
   return finalPath;
