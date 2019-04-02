@@ -1,68 +1,57 @@
 #include "LPAStar.h"
 
-std::pair<double, double> LPAStar::getDistance(Vertex& v)
+double LPAStar::getDistance(Vertex& v)
 {
-  // NOTE: We use this function since we might construct the CPG on demand. So
-  // v might actually have been initialized in distance.
-  if (!distance.count(v))
-    distance[v] = std::make_pair(infVal, infVal);
-
-  return distance[v];
+  return mDistance[v];
 }
 
-std::pair<double, double> LPAStar::getDistanceLookahead(Vertex& v)
+double LPAStar::getDistanceLookahead(Vertex& v)
 {
-  // NOTE: We use this function since we might construct the CPG on demand. So
-  // v might actually have been initialized in distanceLookahead.
-  if (!distanceLookahead.count(v))
-    distanceLookahead[v] = std::make_pair(infVal, infVal);
-
-  return distanceLookahead[v];
+  return mDistanceLookahead[v];
 }
 
 void LPAStar::updatePQ(
   Graph& g,
   Vertex& v,
-  std::pair<double, double> newPriority
+  double newPriority
 ) {
-  vertexIndexMap index_map = get(boost::vertex_index, g);
-  pq.update(index_map[v], newPriority);
+  IndexMap index_map = get(boost::vertex_index, g);
+  mPQ.update(index_map[v], newPriority);
 }
 
-void LPAStar::insertPQ(Graph& g, Vertex& v, std::pair<double, double> priority)
+void LPAStar::insertPQ(Graph& g, Vertex& v, double priority)
 {
-  vertexIndexMap index_map = get(boost::vertex_index, g);
-  pq.insert(index_map[v], priority);
+  IndexMap index_map = get(boost::vertex_index, g);
+  mPQ.insert(index_map[v], priority);
 }
 
 void LPAStar::removePQ(Graph& g, Vertex& v)
 {
-  vertexIndexMap index_map = get(boost::vertex_index, g);
-  pq.remove(index_map[v]);
+  IndexMap index_map = get(boost::vertex_index, g);
+  mPQ.remove(index_map[v]);
 }
 
 bool LPAStar::containsPQ(Graph& g, Vertex& v)
 {
-  vertexIndexMap index_map = get(boost::vertex_index, g);
-  return pq.contains(index_map[v]);
+  IndexMap index_map = get(boost::vertex_index, g);
+  return mPQ.contains(index_map[v]);
 }
 
 bool LPAStar::isEmptyPQ()
 {
-  return (pq.size() == 0);
+  return (mPQ.size() == 0);
 }
 
-std::pair<double, double> LPAStar::peekPQ()
+double LPAStar::peekPQ()
 {
-  return pq.top_key();
+  return mPQ.top_key();
 }
 
-Vertex LPAStar::popPQ(Graph& g, std::pair<double, double>& priorityOut)
+Vertex LPAStar::popPQ(Graph& g)
 {
-  priorityOut = pq.top_key();
-  Vertex top_vertex = vertex(pq.top_idx(), g);
+  Vertex top_vertex = vertex(mPQ.top_idx(), g);
 
-  pq.remove_min();
+  mPQ.remove_min();
   return top_vertex;
 }
 

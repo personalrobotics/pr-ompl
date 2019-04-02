@@ -27,6 +27,7 @@ link_libraries(
 )
 
 add_library(${PROJECT_NAME}
+  src/LPAStar.cpp
   src/NNFrechet.cpp
 )
 

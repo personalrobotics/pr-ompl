@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 #include <queue>
 #include <exception>
 #include <boost/graph/adjacency_list.hpp>
@@ -14,14 +15,13 @@
 
 #include <boost/program_options.hpp>
 
-#include "util.h"
+#include "util.hpp"
 #include "heap_indexed.h"
 
 namespace po = boost::program_options;
 using namespace pr_bgl;
 
-// TODO: Need this?
-// typedef boost::property_map<Graph, boost::vertex_index_t>::type vertexIndexMap;
+typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 
 /// A class for *bottleneck* LPA*. NOTE that the graph must be a DAG for this
 /// code to produce valid results.
