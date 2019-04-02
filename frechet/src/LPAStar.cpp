@@ -123,28 +123,26 @@ void LPAStar::updateVertex(Graph& g, Vertex& u)
 bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
 {
    // start vertex dist lookahead is always zero
-   if (v == startNode)
+   if (v == mStartNode)
       return false;
 
    bool u_relied_on = false;
-   if (prev.count(v))
+   if (mPrev.count(v))
    {
-     Vertex v_pred = prev[v];
+     Vertex v_pred = mPrev[v];
      u_relied_on = v_pred == u;
    }
 
-   VPFrechetDistanceMap frechetMap = get(&VProp::frechetDistance, g);
+   VPFrechetMap frechetMap = get(&VProp::frechet, g);
    double vFrechetWeight = frechetMap[v];
 
-   std::pair<double, double> v_look_old = getDistanceLookahead(v);
+   double v_look_old = getDistanceLookahead(v);
 
+   EPLengthMap edgeLengthMap = get(&EProp::length, g);
    Edge uv_edge = boost::edge(u, v, g).first;
-   double uv_weight = mEdgeWeightFunc(uv_edge);
+   double uv_weight = edgeLengthMap[uv_edge];
 
-   std::pair<double, double> v_look_u = combineCost(
-     getDistance(u),
-     uv_weight,
-     vFrechetWeight);
+   double v_look_u = std::max(getDistance(u), uv_weight);
 
    if (u_relied_on) // u was previously relied upon
    {
@@ -155,24 +153,21 @@ bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
       }
       else if (v_look_u < v_look_old)
       {
-         distanceLookahead[v] = v_look_u;
+         mDistanceLookahead[v] = v_look_u;
          return true;
       }
       else // dist through u increased
       {
         // so we need to search for a potentially new best predecessessor
-        std::pair<double, double> v_look_best = std::make_pair(infVal, infVal);
+        double v_look_best = mInfVal;
         Vertex v_pred_best;
 
-        std::vector<Vertex> v_preds = mPredFunc(v);
+        std::vector<Vertex> v_preds = getPredecessors(v, g);
         for (auto curPred : v_preds)
         {
           Edge predEdge = boost::edge(curPred, v, g).first;
-          double predEdgeWeight = mEdgeWeightFunc(predEdge);
-          std::pair<double, double> curLookahead = combineCost(
-            getDistance(curPred),
-            predEdgeWeight,
-            vFrechetWeight);
+          double predEdgeWeight = edgeLengthMap[predEdge];
+          double curLookahead = std::max(getDistance(curPred), predEdgeWeight);
 
           if (curLookahead < v_look_best)
           {
@@ -181,8 +176,8 @@ bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
           }
         }
 
-        if (v_look_best != std::make_pair(infVal, infVal))
-          prev[v] = v_pred_best;
+        if (v_look_best != mInfVal)
+          mPrev[v] = v_pred_best;
 
         if (v_look_best == v_look_old)
         {
@@ -190,7 +185,7 @@ bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
         }
         else
         {
-          distanceLookahead[v] = v_look_best;
+          mDistanceLookahead[v] = v_look_best;
           return true;
         }
       }
@@ -199,8 +194,8 @@ bool LPAStar::updatePredecessor(Graph& g, Vertex& u, Vertex& v)
    {
       if (v_look_u < v_look_old) // dist through u is better
       {
-         prev[v] = u;
-         distanceLookahead[v] = v_look_u;
+         mPrev[v] = u;
+         mDistanceLookahead[v] = v_look_u;
          return true;
       }
       else // u is not better
