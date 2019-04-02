@@ -15,47 +15,38 @@
 #include <boost/program_options.hpp>
 
 #include "util.h"
-#include "BoostDefinitions.h"
-
 #include "heap_indexed.h"
 
 namespace po = boost::program_options;
-using namespace BOOST_DEFINITIONS;
 using namespace pr_bgl;
 
-static std::pair<double, double> dummyPriorityOut;
+// TODO: Need this?
+// typedef boost::property_map<Graph, boost::vertex_index_t>::type vertexIndexMap;
 
-typedef boost::property_map<Graph, boost::vertex_index_t>::type vertexIndexMap;
-
+/// A class for *bottleneck* LPA*. NOTE that the graph must be a DAG for this
+/// code to produce valid results.
 class LPAStar
 {
-  std::function<double(Edge& cpgEdge)> mEdgeWeightFunc;
-  std::function<std::vector<Vertex>(Vertex& cpgNode)> mPredFunc;
-  std::function<std::vector<Vertex>(Vertex& cpgNode)> mSuccFunc;
+  heap_indexed<double> mPQ;
 
-  heap_indexed< std::pair<double, double> > pq;
+  Vertex mStartNode;
+  Vertex mGoalNode;
 
-  Vertex startNode;
-  Vertex goalNode;
-
-  std::unordered_map< Vertex, std::pair<double, double> > distance;
-  std::unordered_map< Vertex, std::pair<double, double> > distanceLookahead;
-  std::unordered_map< Vertex, Vertex > prev;
+  std::unordered_map< Vertex, double > mDistance;
+  std::unordered_map< Vertex, double > mDistanceLookahead;
+  std::unordered_map< Vertex, Vertex > mPrev;
 
   public:
-    // Report the cost when an abort happens.
-    double mAbortCost = 0.0;
-
     // For marking collision edges.
-    double infVal = std::numeric_limits<double>::max();
+    double mInfVal = std::numeric_limits<double>::max();
 
-    std::pair<double, double> getDistance(Vertex& v);
+    double getDistance(Vertex& v);
 
-    std::pair<double, double> getDistanceLookahead(Vertex& v);
+    double getDistanceLookahead(Vertex& v);
 
-    void updatePQ(Graph& g, Vertex& v, std::pair<double, double> newPriority);
+    void updatePQ(Graph& g, Vertex& v, double newPriority);
 
-    void insertPQ(Graph& g, Vertex& v, std::pair<double, double> priority);
+    void insertPQ(Graph& g, Vertex& v, double priority);
 
     void removePQ(Graph& g, Vertex& v);
 
@@ -64,13 +55,11 @@ class LPAStar
     bool isEmptyPQ();
 
     // Get the samllest priority in the queue.
-    std::pair<double, double> peekPQ();
+    double peekPQ();
 
     // We use a min heap, so this should be the Vertex with the smallest
     // priority.
-    Vertex popPQ(
-      Graph& g,
-      std::pair<double, double>& priorityOut = dummyPriorityOut);
+    Vertex popPQ(Graph& g);
 
     // NOTE: Actual LPA* methods.
 
@@ -78,24 +67,14 @@ class LPAStar
     void initLPA(
       Graph& g,
       Vertex& start,
-      Vertex& goal,
-      std::function<double(Edge& cpgEdge)> edgeWeightFunc = NULL,
-      std::function<std::vector<Vertex>(Vertex& cpgNode)> predFunc = NULL,
-      std::function<std::vector<Vertex>(Vertex& cpgNode)> succFunc = NULL);
+      Vertex& goal);
 
     // Add new nodes in the graph. Assume that client will call update methods
     // for those nodes on their own.
     void addNewNodes(std::vector<Vertex>& newNodes);
 
-    // Take the old priority of a node U, and get a new priority by combining it
-    // with the edge leading from U to V.
-    std::pair<double, double> combineCost(
-      std::pair<double, double> priority,
-      double uvEdgeCost,
-      double vFrechetWeight);
-
     // Get key of a node.
-    std::pair<double, double> calculateKey(Vertex& node);
+    double calculateKey(Vertex& node);
 
     // this must be called called when u's dist and/or lookahead dist
     // (and therefore consistency) may have been changed
@@ -111,7 +90,7 @@ class LPAStar
     bool updatePredecessor(Graph& g, Vertex& u, Vertex& v);
 
     // Return shortest path.
-    std::vector<Vertex> computeShortestPath(Graph& g, double bound = 0.0);
+    std::vector<Vertex> computeShortestPath(Graph& g);
 
     // Helper method for the above. Follows prev map to recover the shortest
     // path.
