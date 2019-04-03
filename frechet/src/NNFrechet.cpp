@@ -597,6 +597,8 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
 
 std::vector<ompl::base::State*> NNFrechet::lazySP()
 {
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+
   // Lazy SP style. Just keep searching until you find a collision free
   // path that works.
   while (true)
@@ -638,25 +640,22 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
         }
       }
 
-      // Build up the series of configurations in the path.
-      if (foundPathConfigurations.size() == 0)
+      // Edge is free, add it to the path.
+      ompl::base::State* startState  = stateMap[curVertex];
+      ompl::base::State* endState = stateMap[nextVertex];
+
+      if (finalStates.size() == 0)
       {
-        foundPathConfigurations.push_back(startConfig);
-        foundPathConfigurations.push_back(endConfig);
+        finalStates.push_back(startState);
+        finalStates.push_back(endState);
       } else {
-        foundPathConfigurations.push_back(endConfig);
+        finalStates.push_back(endState);
       }
     }
 
+    // Fully valid path.
     if (collisionFree)
-    {
-      bottleneckCost = frechetMap[bottleneckVertex];
-
-      // Path is completely clear. Return the trajectory.
-      foundCrossProductPath = std::move(shortestPath);
-      foundRoadmapPath = std::move(roadmapPath);
-      return foundPathConfigurations;
-    }
+      return finalStates;
   }
 }
 
