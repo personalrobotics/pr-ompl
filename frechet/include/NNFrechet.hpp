@@ -115,7 +115,7 @@ namespace NNFrechet {
     bool checkEdgeEvaluation(Vertex& source, Vertex& target);
     // Core collision check.
     bool evaluateEdge(Vertex& source, Vertex& target);
-    void markEdgeInCollision(Vertex& source, Vertex& target);
+    void markEdgeInCollision(Vertex& nnU, Vertex& nnV);
     // Use LazySP to search for a collision free path in the CPG. Returns the
     // path as a series of configurations q1 ... qn.
     std::vector<ompl::base::State*> lazySP();

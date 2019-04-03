@@ -574,14 +574,25 @@ bool NNFrechet::evaluateEdge(
   return false;
 }
 
-void markEdgeInCollision NNFrechet::lazySP(
-  Vertex& source,
-  Vertex& target
-) {
+void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
+{
+  EPLengthMap edgeLengthMap = get(&EProp::length, mTensorProductGraph);
+  VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
 
-  // TODO.
+  std::string nnEdgeString = nnNameMap[nnU] + "_" + nnNameMap[nnV];
+  std::vector<Edge>& mappedTPGEdges = mNNToTPGEdges[nnEdgeString];
 
+  for (const auto& curEdge : mappedTPGEdges)
+    edgeLengthMap[curEdge] = mLPAStar.mInfVal;
 
+  for (const auto& updateEdge : mappedTPGEdges)
+  {
+    Vertex tensorU = source(updateEdge, mTensorProductGraph);
+    Vertex tensorV = target(updateEdge, mTensorProductGraph);
+
+    if (mLPAStar.updatePredecessor(mTensorProductGraph, tensorU, tensorV))
+      mLPAStar.updateVertex(mTensorProductGraph, tensorV);
+  }
 }
 
 std::vector<ompl::base::State*> NNFrechet::lazySP()
