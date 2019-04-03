@@ -503,6 +503,137 @@ void NNFrechet::initStructures()
   std::cout << "[INFO]: LPA* structure initialized." << std::endl;
 }
 
+std::vector<Vertex> NNFrechet::extractNNPath(
+  std::vector<Vertex>& tensorProductPath
+) {
+  VPNNComponentMap nnComponentMap =
+    get(&VProp::nnComponent, mTensorProductGraph);
+
+  std::vector<Vertex> nnPath;
+  for (int i = 0; i < tensorProductPath.size(); i++)
+  {
+    Vertex tensorVertex = tensorProductPath[i];
+    Vertex curNNVertex = nnComponentMap[tensorVertex];
+
+    // NOTE: The start/goal are dummies. Ignore for now.
+    // TODO: Should they *not* be dummies?
+    if (curNNVertex == mNNStartNode || curNNVertex == mNNGoalNode)
+      continue;
+
+    // This represents an actual edge in the NN Graph.
+    if (nnPath.size() == 0 || nnPath.back() != curNNVertex)
+    {
+      nnPath.push_back(curNNVertex);
+    }
+  }
+
+  return nnPath;
+}
+
+std::vector<ompl::base::State*> NNFrechet::lazySP()
+{
+  // Lazy SP style. Just keep searching until you find a collision free
+  // path that works.
+  while (true)
+  {
+    std::vector<Vertex> shortestPath =
+      mLPAStar.computeShortestPath(mTensorProductGraph);
+
+    // Shortest path was all in collision.
+    if (shortestPath.size() == 0)
+      return std::vector<ompl::base::State*>();
+
+    std::vector<Vertex> roadmapPath = extractNNPath(shortestPath);
+
+    VPLayerIndexReachedMap layerReachedMap = get(
+      &VProp::layerIndexReached,
+      allLayeredGraphs.at(pathId));
+
+    VPFrechetDistanceMap frechetMap = get(
+      &VProp::frechetDistance,
+      crossProductGraph);
+
+    std::vector<Eigen::VectorXd> foundPathConfigurations;
+    bool collisionFree = true;
+    // NOTE: This is something specific to the Layered Graph roadmap since
+    // the start and end nodes are dummies. Will change for a general
+    // roadmap.
+    for (int i = 1; i < roadmapPath.size() - 2; i++)
+    {
+      Vertex curVertex = roadmapPath[i];
+      Vertex nextVertex = roadmapPath[i + 1];
+
+      Eigen::VectorXd startConfig  = ikSolutionMap[curVertex];
+      Eigen::VectorXd endConfig = ikSolutionMap[nextVertex];
+
+      bool alreadyEvaluated = checkEdgeEvaluation(
+        curVertex,
+        nextVertex,
+        pathId);
+
+      if (!alreadyEvaluated)
+      {
+        // Coll check optimization to check if either endpoint was in one of the
+        // layers.
+        boost::timer forwardCheckTimer;
+        bool earlyCollision = forwardCollisionCheck(
+          curVertex,
+          pathId);
+        collCheckTotalTime += forwardCheckTimer.elapsed();
+
+        if (earlyCollision)
+        {
+          collisionFree = false;
+          break;
+        }
+
+        boost::timer edgeCheckTimer;
+        bool inCollision = checkEdgeCollision(
+          startConfig,
+          endConfig,
+          mCollCheckFunc,
+          mInterpolationFunc
+        );
+        collCheckTotalTime += edgeCheckTimer.elapsed();
+
+        // Edge is in collision. Path will not be used.
+        if (inCollision)
+        {
+          boost::timer markTimer;
+          markEdgeInCollision(curVertex, nextVertex, pathId);
+          collCheckTotalTime += markTimer.elapsed();
+
+          collisionFree = false;
+          break;
+        }
+      }
+
+      // Make note of how much father into the layered graph we got.
+      int curLayerIndex = layerReachedMap[nextVertex];
+      deepestLayerReached = std::max(deepestLayerReached, curLayerIndex);
+
+      // Build up the series of configurations in the path.
+      if (foundPathConfigurations.size() == 0)
+      {
+        foundPathConfigurations.push_back(startConfig);
+        foundPathConfigurations.push_back(endConfig);
+      } else {
+        foundPathConfigurations.push_back(endConfig);
+      }
+    }
+
+    if (collisionFree)
+    {
+      bottleneckCost = frechetMap[bottleneckVertex];
+
+      // Path is completely clear. Return the trajectory.
+      foundCrossProductPath = std::move(shortestPath);
+      foundRoadmapPath = std::move(roadmapPath);
+      return foundPathConfigurations;
+    }
+  }
+}
+
 
 
 }

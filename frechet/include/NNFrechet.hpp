@@ -107,6 +107,11 @@ namespace NNFrechet {
 
     void initStructures();
 
+    // Extract the corresponding NN Graph path from a path in the TPG.
+    std::vector<Vertex> extractNNPath(std::vector<Vertex>& tensorProductPath);
+    // Use LazySP to search for a collision free path in the CPG. Returns the
+    // path as a series of configurations q1 ... qn.
+    std::vector<ompl::base::State*> lazySP();
   };
 
 } // namespace LRAstar
