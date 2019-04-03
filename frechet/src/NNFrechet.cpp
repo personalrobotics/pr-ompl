@@ -499,15 +499,8 @@ void NNFrechet::initStructures()
 
   std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
 
-  // TODO.
-  // lpaStar.initLPA(
-  //   crossProductGraph,
-  //   crossProductStartVertex,
-  //   crossProductEndVertex,
-  //   weightFunc,
-  //   predFunc,
-  //   succFunc);
-  // std::cout << "[INFO]: LPA* structure initialized." << std::endl;
+  mLPAStar.initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
+  std::cout << "[INFO]: LPA* structure initialized." << std::endl;
 }
 
 

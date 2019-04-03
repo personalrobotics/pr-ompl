@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "util.hpp"
+#include "LPAStar.h"
 
 namespace NNFrechet {
 
@@ -59,6 +60,8 @@ namespace NNFrechet {
     int mIKMultiplier;
     int mNumNN;
     int mDiscretization;
+
+    LPAStar mLPAStar;
 
     // Function pointers that are set during creation for FK/IK.
     std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
