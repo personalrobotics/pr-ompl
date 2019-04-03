@@ -539,6 +539,32 @@ bool NNFrechet::checkEdgeEvaluation(Vertex& source, Vertex& target)
   return evalMap[edgeUV];
 }
 
+bool NNFrechet::evaluateMotion(
+  ompl::base::State* startState,
+  ompl::base::State* endState
+) {
+  auto validityChecker = si_->getStateValidityChecker();
+  auto checkState = mSpace->allocState();
+
+  double length = mSpace->distance(startState, endState);
+  int numQ = ceil(length/mCheckResolution);
+
+  // Interpolate and coll-check the edge.
+  double step = 1.0/numQ;
+  for (double alpha = 0.0; alpha <= 1.0; alpha += step)
+  {
+    mSpace->interpolate(startState, endState, alpha, checkState);
+    if (!validityChecker->isValid(checkState))
+    {
+      mSpace->freeState(checkState);
+      return true;
+    }
+  }
+
+  mSpace->freeState(checkState);
+  return false;
+}
+
 std::vector<ompl::base::State*> NNFrechet::lazySP()
 {
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
@@ -575,35 +601,13 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
       // TODO!
       if (!alreadyEvaluated)
       {
-        // Coll check optimization to check if either endpoint was in one of the
-        // layers.
-        boost::timer forwardCheckTimer;
-        bool earlyCollision = forwardCollisionCheck(
-          curVertex,
-          pathId);
-        collCheckTotalTime += forwardCheckTimer.elapsed();
-
-        if (earlyCollision)
-        {
-          collisionFree = false;
-          break;
-        }
-
-        boost::timer edgeCheckTimer;
-        bool inCollision = checkEdgeCollision(
-          startConfig,
-          endConfig,
-          mCollCheckFunc,
-          mInterpolationFunc
-        );
-        collCheckTotalTime += edgeCheckTimer.elapsed();
+        // TODO: Forward collision checking?
+        bool inCollision = evaluateMotion(startState, endState);
 
         // Edge is in collision. Path will not be used.
         if (inCollision)
         {
-          boost::timer markTimer;
           markEdgeInCollision(curVertex, nextVertex, pathId);
-          collCheckTotalTime += markTimer.elapsed();
 
           collisionFree = false;
           break;
