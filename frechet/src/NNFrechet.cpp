@@ -543,6 +543,11 @@ bool NNFrechet::evaluateEdge(
   Vertex& source,
   Vertex& target
 ) {
+  // First, mark the edge as evlauated.
+  EPEvaluatedMap evalMap = get(&EProp::evaluated, mNNGraph);
+  Edge edgeUV = boost::edge(source, target, mNNGraph).first;
+  evalMap[edgeUV] = true;
+
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
   ompl::base::State* startState  = stateMap[source];
   ompl::base::State* endState = stateMap[target];
@@ -567,6 +572,16 @@ bool NNFrechet::evaluateEdge(
 
   mSpace->freeState(checkState);
   return false;
+}
+
+void markEdgeInCollision NNFrechet::lazySP(
+  Vertex& source,
+  Vertex& target
+) {
+
+  // TODO.
+
+
 }
 
 std::vector<ompl::base::State*> NNFrechet::lazySP()
