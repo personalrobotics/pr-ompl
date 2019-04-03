@@ -530,8 +530,19 @@ std::vector<Vertex> NNFrechet::extractNNPath(
   return nnPath;
 }
 
+bool NNFrechet::checkEdgeEvaluation(Vertex& source, Vertex& target)
+{
+  EPEvaluatedMap evalMap = get(&EProp::evaluated, mNNGraph);
+  Edge edgeUV = boost::edge(source, target, mNNGraph).first;
+
+  // TODO: Do we have to manually set things to false?
+  return evalMap[edgeUV];
+}
+
 std::vector<ompl::base::State*> NNFrechet::lazySP()
 {
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+
   // Lazy SP style. Just keep searching until you find a collision free
   // path that works.
   while (true)
@@ -543,34 +554,25 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
     if (shortestPath.size() == 0)
       return std::vector<ompl::base::State*>();
 
-    std::vector<Vertex> roadmapPath = extractNNPath(shortestPath);
+    std::vector<Vertex> nnPath = extractNNPath(shortestPath);
 
-    VPLayerIndexReachedMap layerReachedMap = get(
-      &VProp::layerIndexReached,
-      allLayeredGraphs.at(pathId));
-
-    VPFrechetDistanceMap frechetMap = get(
-      &VProp::frechetDistance,
-      crossProductGraph);
-
-    std::vector<Eigen::VectorXd> foundPathConfigurations;
+    std::vector<ompl::base::State*> finalStates;
     bool collisionFree = true;
-    // NOTE: This is something specific to the Layered Graph roadmap since
-    // the start and end nodes are dummies. Will change for a general
-    // roadmap.
-    for (int i = 1; i < roadmapPath.size() - 2; i++)
+    // NOTE: We check the current node and the next one, so stop one node
+    // early on the path.
+    for (int i = 0; i < nnPath.size() - 1; i++)
     {
-      Vertex curVertex = roadmapPath[i];
-      Vertex nextVertex = roadmapPath[i + 1];
+      Vertex curVertex = nnPath[i];
+      Vertex nextVertex = nnPath[i + 1];
 
-      Eigen::VectorXd startConfig  = ikSolutionMap[curVertex];
-      Eigen::VectorXd endConfig = ikSolutionMap[nextVertex];
+      ompl::base::State* startState  = stateMap[curVertex];
+      ompl::base::State* endState = stateMap[nextVertex];
 
       bool alreadyEvaluated = checkEdgeEvaluation(
         curVertex,
-        nextVertex,
-        pathId);
+        nextVertex);
 
+      // TODO!
       if (!alreadyEvaluated)
       {
         // Coll check optimization to check if either endpoint was in one of the

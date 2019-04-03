@@ -109,6 +109,8 @@ namespace NNFrechet {
 
     // Extract the corresponding NN Graph path from a path in the TPG.
     std::vector<Vertex> extractNNPath(std::vector<Vertex>& tensorProductPath);
+    // Check if lazy SP has already evaluated an NN Graph edge.
+    bool checkEdgeEvaluation(Vertex& source, Vertex& target);
     // Use LazySP to search for a collision free path in the CPG. Returns the
     // path as a series of configurations q1 ... qn.
     std::vector<ompl::base::State*> lazySP();

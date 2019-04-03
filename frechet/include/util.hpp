@@ -66,7 +66,7 @@ typedef boost::property_map<Graph, Vertex VProp::*>::type VPNNComponentMap;
 // Edge Maps
 typedef boost::property_map<Graph, boost::edge_index_t EProp::*>::type EdgeIndexMap;
 typedef boost::property_map<Graph, double EProp::*>::type EPLengthMap;
-typedef boost::property_map<Graph, double EProp::*>::type EPEvaluatedMap;
+typedef boost::property_map<Graph, bool EProp::*>::type EPEvaluatedMap;
 
 
 std::vector<double> linDoubleSpace(double min, double max, size_t N);
