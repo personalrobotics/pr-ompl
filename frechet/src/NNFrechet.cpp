@@ -539,10 +539,14 @@ bool NNFrechet::checkEdgeEvaluation(Vertex& source, Vertex& target)
   return evalMap[edgeUV];
 }
 
-bool NNFrechet::evaluateMotion(
-  ompl::base::State* startState,
-  ompl::base::State* endState
+bool NNFrechet::evaluateEdge(
+  Vertex& source,
+  Vertex& target
 ) {
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  ompl::base::State* startState  = stateMap[source];
+  ompl::base::State* endState = stateMap[target];
+
   auto validityChecker = si_->getStateValidityChecker();
   auto checkState = mSpace->allocState();
 
@@ -567,8 +571,6 @@ bool NNFrechet::evaluateMotion(
 
 std::vector<ompl::base::State*> NNFrechet::lazySP()
 {
-  VPStateMap stateMap = get(&VProp::state, mNNGraph);
-
   // Lazy SP style. Just keep searching until you find a collision free
   // path that works.
   while (true)
@@ -591,32 +593,24 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
       Vertex curVertex = nnPath[i];
       Vertex nextVertex = nnPath[i + 1];
 
-      ompl::base::State* startState  = stateMap[curVertex];
-      ompl::base::State* endState = stateMap[nextVertex];
-
       bool alreadyEvaluated = checkEdgeEvaluation(
         curVertex,
         nextVertex);
 
-      // TODO!
       if (!alreadyEvaluated)
       {
         // TODO: Forward collision checking?
-        bool inCollision = evaluateMotion(startState, endState);
+        bool inCollision = evaluateEdge(curVertex, nextVertex);
 
         // Edge is in collision. Path will not be used.
         if (inCollision)
         {
-          markEdgeInCollision(curVertex, nextVertex, pathId);
+          markEdgeInCollision(curVertex, nextVertex);
 
           collisionFree = false;
           break;
         }
       }
-
-      // Make note of how much father into the layered graph we got.
-      int curLayerIndex = layerReachedMap[nextVertex];
-      deepestLayerReached = std::max(deepestLayerReached, curLayerIndex);
 
       // Build up the series of configurations in the path.
       if (foundPathConfigurations.size() == 0)

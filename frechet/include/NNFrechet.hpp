@@ -114,9 +114,8 @@ namespace NNFrechet {
     // Check if lazy SP has already evaluated an NN Graph edge.
     bool checkEdgeEvaluation(Vertex& source, Vertex& target);
     // Core collision check.
-    bool evaluateMotion(
-      ompl::base::State* startState,
-      ompl::base::State* endState);
+    bool evaluateEdge(Vertex& source, Vertex& target);
+    void markEdgeInCollision(Vertex& source, Vertex& target);
     // Use LazySP to search for a collision free path in the CPG. Returns the
     // path as a series of configurations q1 ... qn.
     std::vector<ompl::base::State*> lazySP();
