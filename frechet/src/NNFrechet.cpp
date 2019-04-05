@@ -15,7 +15,6 @@ namespace NNFrechet
 
 NNFrechet::NNFrechet(
   const ompl::base::SpaceInformationPtr &si,
-  std::vector<Eigen::Isometry3d>& referencePath,
   int numWaypoints,
   int ikMultiplier,
   int numNN,
@@ -29,9 +28,6 @@ NNFrechet::NNFrechet(
   , mDiscretization(discretization)
 {
   mRandomGenerator.seed(seed);
-
-  // Don't use the entire reference path. Subsample it.
-  mReferencePath = subsampleRefPath(referencePath);
 }
 
 std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
@@ -49,6 +45,13 @@ std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
   }
 
   return subSampled;
+}
+
+void NNFrechet::setRefPath(
+  std::vector<Eigen::Isometry3d>& referencePath
+) {
+  // Don't use the entire reference path. Subsample it.
+  mReferencePath = subsampleRefPath(referencePath);
 }
 
 void NNFrechet::setFKFunc(

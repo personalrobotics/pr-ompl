@@ -65,7 +65,7 @@ namespace NNFrechet {
 
     LPAStar mLPAStar;
 
-    // Function pointers that are set during creation for FK/IK.
+    // Function pointers that are set externally for FK/IK.
     std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
     std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> mIkFunc;
     // Custom task space distance function used to calculate frechet distance.
@@ -73,7 +73,6 @@ namespace NNFrechet {
 
     NNFrechet(
       const ompl::base::SpaceInformationPtr &si,
-      std::vector<Eigen::Isometry3d>& referencePath,
       int numWaypoints,
       int ikMultiplier,
       int numNN,
@@ -82,6 +81,7 @@ namespace NNFrechet {
 
     // Setters and getters.
     std::vector<Eigen::Isometry3d> subsampleRefPath(std::vector<Eigen::Isometry3d>& referencePath);
+    void setRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
     void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
