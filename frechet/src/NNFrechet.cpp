@@ -701,6 +701,19 @@ ompl::base::PlannerStatus NNFrechet::solve(double solveTime)
 
 void NNFrechet::setup()
 {
+  // Need to check that required fields are set.
+  if (mReferencePath.size() == 0)
+    throw ompl::Exception("Ref path not set!");
+
+  if (mFkFunc == NULL )
+    throw ompl::Exception("FK function not set!");
+
+  if (mIkFunc == NULL )
+    throw ompl::Exception("IK function not set!");
+
+  if (mDistanceFunc == NULL )
+    throw ompl::Exception("Task-space distance function not set!");
+
   // Build all three graphs.
   buildReferenceGraph();
   buildNNGraph();
