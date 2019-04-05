@@ -118,7 +118,7 @@ namespace NNFrechet {
     void markEdgeInCollision(Vertex& nnU, Vertex& nnV);
     // Use LazySP to search for a collision free path in the CPG. Returns the
     // path as a series of configurations q1 ... qn.
-    std::vector<ompl::base::State*> lazySP();
+    std::vector<Vertex> lazySP();
 
     // OMPL required methods
     void setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef);

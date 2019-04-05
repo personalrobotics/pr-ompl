@@ -595,7 +595,7 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
   }
 }
 
-std::vector<ompl::base::State*> NNFrechet::lazySP()
+std::vector<Vertex> NNFrechet::lazySP()
 {
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
 
@@ -608,11 +608,11 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
 
     // Shortest path was all in collision.
     if (shortestPath.size() == 0)
-      return std::vector<ompl::base::State*>();
+      return std::vector<Vertex>();
 
     std::vector<Vertex> nnPath = extractNNPath(shortestPath);
 
-    std::vector<ompl::base::State*> finalStates;
+    std::vector<Vertex> finalPath;
     bool collisionFree = true;
     // NOTE: We check the current node and the next one, so stop one node
     // early on the path.
@@ -640,22 +640,18 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
         }
       }
 
-      // Edge is free, add it to the path.
-      ompl::base::State* startState  = stateMap[curVertex];
-      ompl::base::State* endState = stateMap[nextVertex];
-
-      if (finalStates.size() == 0)
+      if (finalPath.size() == 0)
       {
-        finalStates.push_back(startState);
-        finalStates.push_back(endState);
+        finalPath.push_back(curVertex);
+        finalPath.push_back(nextVertex);
       } else {
-        finalStates.push_back(endState);
+        finalPath.push_back(nextVertex);
       }
     }
 
     // Fully valid path.
     if (collisionFree)
-      return finalStates;
+      return finalPath;
   }
 }
 
