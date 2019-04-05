@@ -663,6 +663,17 @@ void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pde
   // TODO: Maybe just start?
 }
 
+ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
+{
+  ompl::geometric::PathGeometric* pathOut = new ompl::geometric::PathGeometric(si_);
+
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  for (Vertex curNode : nnPath)
+    pathOut->append(stateMap[curNode]);
+
+  return ompl::base::PathPtr(pathOut);
+}
+
 
 
 }
