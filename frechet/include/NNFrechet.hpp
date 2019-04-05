@@ -116,15 +116,13 @@ namespace NNFrechet {
     // Core collision check.
     bool evaluateEdge(Vertex& source, Vertex& target);
     void markEdgeInCollision(Vertex& nnU, Vertex& nnV);
-    // Use LazySP to search for a collision free path in the CPG. Returns the
-    // path as a series of configurations q1 ... qn.
-    std::vector<Vertex> lazySP();
 
     // OMPL required methods
     void setProblemDefinition(const ompl::base::ProblemDefinitionPtr& pdef);
     ompl::base::PathPtr constructSolution(std::vector<Vertex>& nnPath);
-    ompl::base::PlannerStatus solve(double solveTime);
+    // Use LazySP to search for a collision free path that minimizes Frechet.
     ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition& ptc);
+    ompl::base::PlannerStatus solve(double solveTime);
     void setup();
   };
 

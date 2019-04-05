@@ -595,24 +595,47 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
   }
 }
 
-std::vector<Vertex> NNFrechet::lazySP()
+// OMPL Methods
+void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
+  // NOTE: I don't think anything is needed here, since start/goal aren't really
+  // required for this planner.
+  // TODO: Maybe just start?
+}
+
+ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
+{
+  ompl::geometric::PathGeometric* pathOut = new ompl::geometric::PathGeometric(si_);
+
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  for (Vertex curNode : nnPath)
+    pathOut->append(stateMap[curNode]);
+
+  return ompl::base::PathPtr(pathOut);
+}
+
+ompl::base::PlannerStatus NNFrechet::solve(
+  const ompl::base::PlannerTerminationCondition& ptc
+) {
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
 
+  std::vector<Vertex> finalPath;
+  bool solutionFound = false;
+
   // Lazy SP style. Just keep searching until you find a collision free
-  // path that works.
-  while (true)
+  // path that works, all in collision, or ptc violated.
+  while (ptc == false)
   {
+    finalPath.clear();
+
     std::vector<Vertex> shortestPath =
       mLPAStar.computeShortestPath(mTensorProductGraph);
-
     // Shortest path was all in collision.
     if (shortestPath.size() == 0)
-      return std::vector<Vertex>();
+      break;
 
     std::vector<Vertex> nnPath = extractNNPath(shortestPath);
 
-    std::vector<Vertex> finalPath;
     bool collisionFree = true;
     // NOTE: We check the current node and the next one, so stop one node
     // early on the path.
@@ -651,29 +674,23 @@ std::vector<Vertex> NNFrechet::lazySP()
 
     // Fully valid path.
     if (collisionFree)
-      return finalPath;
+    {
+      solutionFound = true;
+      break;
+    }
+  }
+
+  if(solutionFound)
+  {
+    pdef_->addSolutionPath(constructSolution(finalPath));
+
+    OMPL_INFORM("Solution Found!");
+    return ompl::base::PlannerStatus::EXACT_SOLUTION;
+  } else {
+    OMPL_INFORM("Solution NOT Found");
+    return ompl::base::PlannerStatus::TIMEOUT;
   }
 }
-
-// OMPL Methods
-void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
-{
-  // NOTE: I don't think anything is needed here, since start/goal aren't really
-  // required for this planner.
-  // TODO: Maybe just start?
-}
-
-ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
-{
-  ompl::geometric::PathGeometric* pathOut = new ompl::geometric::PathGeometric(si_);
-
-  VPStateMap stateMap = get(&VProp::state, mNNGraph);
-  for (Vertex curNode : nnPath)
-    pathOut->append(stateMap[curNode]);
-
-  return ompl::base::PathPtr(pathOut);
-}
-
 
 
 }
