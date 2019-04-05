@@ -71,6 +71,8 @@ namespace NNFrechet {
     // Custom task space distance function used to calculate frechet distance.
     std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> mDistanceFunc;
 
+    NNFrechet(const ompl::base::SpaceInformationPtr &si);
+
     NNFrechet(
       const ompl::base::SpaceInformationPtr &si,
       int numWaypoints,
