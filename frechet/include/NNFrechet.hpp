@@ -81,12 +81,20 @@ namespace NNFrechet {
       int discretization,
       int seed = 1);
 
-    // Setters and getters.
+    // Setters and getters. These *must* be called before setup().
     std::vector<Eigen::Isometry3d> subsampleRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
     void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
+
+    // Setters that caller is not required to use, but that can be used to
+    // alter NNF params before setup() constructs the three graphs.
+    void setNumWaypoints(int numWaypoints);
+    void setIKMultiplier(int ikMultiplier);
+    void setNumNN(int numNN);
+    void setDiscretization(int discretization);
+    void setRandomSeed(int seed);
 
     // Graph construction methods.
     void buildReferenceGraph();

@@ -84,6 +84,31 @@ void NNFrechet::setDistanceFunc(
   mDistanceFunc = distanceFunc;
 }
 
+void NNFrechet::setNumWaypoints(int numWaypoints)
+{
+  mNumWaypoints = numWaypoints;
+}
+
+void NNFrechet::setIKMultiplier(int ikMultiplier)
+{
+  mIKMultiplier = ikMultiplier;
+}
+
+void NNFrechet::setNumNN(int numNN)
+{
+  mNumNN = numNN;
+}
+
+void NNFrechet::setDiscretization(int discretization)
+{
+  mDiscretization = discretization;
+}
+
+void NNFrechet::setRandomSeed(int seed)
+{
+  mRandomGenerator.seed(seed);
+}
+
 void NNFrechet::buildReferenceGraph()
 {
   VPNameMap nameMap = get(&VProp::name, mReferenceGraph);
