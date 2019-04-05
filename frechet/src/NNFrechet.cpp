@@ -692,5 +692,11 @@ ompl::base::PlannerStatus NNFrechet::solve(
   }
 }
 
+ompl::base::PlannerStatus NNFrechet::solve(double solveTime)
+{
+  return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
+}
+
+
 
 }
