@@ -107,8 +107,6 @@ namespace NNFrechet {
       std::vector<Vertex>& nnNodes);
     void buildTensorProductGraph();
 
-    void initStructures();
-
     // Extract the corresponding NN Graph path from a path in the TPG.
     std::vector<Vertex> extractNNPath(std::vector<Vertex>& tensorProductPath);
     // Check if lazy SP has already evaluated an NN Graph edge.
@@ -123,6 +121,7 @@ namespace NNFrechet {
     // Use LazySP to search for a collision free path that minimizes Frechet.
     ompl::base::PlannerStatus solve(const ompl::base::PlannerTerminationCondition& ptc);
     ompl::base::PlannerStatus solve(double solveTime);
+    // Inits all three graphs, as well as LPA* structures.
     void setup();
   };
 

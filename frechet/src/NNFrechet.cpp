@@ -490,19 +490,6 @@ void NNFrechet::buildTensorProductGraph()
   connectTensorProductNodes(refNodes, nnNodes);
 }
 
-void NNFrechet::initStructures()
-{
-  // Build all three graphs.
-  buildReferenceGraph();
-  buildNNGraph();
-  buildTensorProductGraph();
-
-  std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
-
-  mLPAStar.initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
-  std::cout << "[INFO]: LPA* structure initialized." << std::endl;
-}
-
 std::vector<Vertex> NNFrechet::extractNNPath(
   std::vector<Vertex>& tensorProductPath
 ) {
@@ -697,6 +684,18 @@ ompl::base::PlannerStatus NNFrechet::solve(double solveTime)
   return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
 }
 
+void NNFrechet::setup()
+{
+  // Build all three graphs.
+  buildReferenceGraph();
+  buildNNGraph();
+  buildTensorProductGraph();
+
+  std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
+
+  mLPAStar.initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
+  std::cout << "[INFO]: LPA* structure initialized." << std::endl;
+}
 
 
 }
