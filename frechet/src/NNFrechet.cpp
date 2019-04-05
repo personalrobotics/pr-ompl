@@ -659,6 +659,14 @@ std::vector<ompl::base::State*> NNFrechet::lazySP()
   }
 }
 
+// OMPL Methods
+void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
+{
+  // NOTE: I don't think anything is needed here, since start/goal aren't really
+  // required for this planner.
+  // TODO: Maybe just start?
+}
+
 
 
 }
