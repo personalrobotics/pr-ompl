@@ -32,8 +32,22 @@ add_library(${PROJECT_NAME}
   src/NNFrechet.cpp
 )
 
-#install(TARGETS ${PROJECT_NAME}
-#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
+#================================================================================
+# Installation
+
+  install(TARGETS pr-ompl-frechet EXPORT pr-ompl-frechetConfig
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin)
+
+  install(DIRECTORY include/ DESTINATION include/pr_ompl_frechet)
+
+  # This makes the project importable from the install directory
+  install(EXPORT pr-ompl-frechetConfig DESTINATION share/pr-ompl-frechet/cmake)
+
+  # This makes the project importable from the build directory
+  export(TARGETS pr-ompl-frechet FILE pr-ompl-frechetConfig.cmake)
+
+  # Install the package.xml file (to satisfy REP-136).
+  install(FILES "package.xml"
+    DESTINATION "share/pr-ompl-frechet")
