@@ -40,7 +40,7 @@ add_library(${PROJECT_NAME}
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
 
-  install(DIRECTORY include/ DESTINATION include/pr_ompl_frechet)
+  install(DIRECTORY include/ DESTINATION include/pr-ompl-frechet)
 
   # This makes the project importable from the install directory
   install(EXPORT pr-ompl-frechetConfig DESTINATION share/pr-ompl-frechet/cmake)
