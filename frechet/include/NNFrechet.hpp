@@ -66,8 +66,8 @@ namespace NNFrechet {
     LPAStar mLPAStar;
 
     // Function pointers that are set externally for FK/IK.
-    std::function<Eigen::Isometry3d(Eigen::VectorXd&)> mFkFunc;
-    std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> mIkFunc;
+    std::function<Eigen::Isometry3d(ompl::base::State*)> mFkFunc;
+    std::function<std::vector<ompl::base::State*>(Eigen::Isometry3d&, int)> mIkFunc;
     // Custom task space distance function used to calculate frechet distance.
     std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> mDistanceFunc;
 
@@ -85,8 +85,8 @@ namespace NNFrechet {
     // Setters and getters. These *must* be called before setup().
     std::vector<Eigen::Isometry3d> subsampleRefPath(std::vector<Eigen::Isometry3d>& referencePath);
     void setRefPath(std::vector<Eigen::Isometry3d>& referencePath);
-    void setFKFunc(std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc);
-    void setIKFunc(std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc);
+    void setFKFunc(std::function<Eigen::Isometry3d(ompl::base::State*)> fkFunc);
+    void setIKFunc(std::function<std::vector<ompl::base::State*>(Eigen::Isometry3d&, int)> ikFunc);
     void setDistanceFunc(std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc);
 
     // Setters that caller is not required to use, but that can be used to

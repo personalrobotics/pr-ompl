@@ -67,13 +67,13 @@ void NNFrechet::setRefPath(
 }
 
 void NNFrechet::setFKFunc(
-  std::function<Eigen::Isometry3d(Eigen::VectorXd&)> fkFunc
+  std::function<Eigen::Isometry3d(ompl::base::State*)> fkFunc
 ) {
   mFkFunc = fkFunc;
 }
 
 void NNFrechet::setIKFunc(
-  std::function<std::vector<Eigen::VectorXd>(Eigen::Isometry3d&, int)> ikFunc
+  std::function<std::vector<ompl::base::State*>(Eigen::Isometry3d&, int)> ikFunc
 ) {
   mIkFunc = ikFunc;
 }
@@ -149,7 +149,7 @@ std::vector<Vertex> NNFrechet::sampleIKNodes(
   VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
 
   std::vector<Vertex> sampledNodes;
-  std::vector<Eigen::VectorXd> ikSolutions = mIkFunc(curWaypoint, numSolutions);
+  std::vector<ompl::base::State*> ikSolutions = mIkFunc(curWaypoint, numSolutions);
 
   for (auto curSol : ikSolutions)
   {
@@ -157,16 +157,7 @@ std::vector<Vertex> NNFrechet::sampleIKNodes(
 
     Eigen::Isometry3d curPose = mFkFunc(curSol);
     poseMap[newNNVertex] = curPose;
-
-    // TODO: Right now there's just a hack converting the Eigen::Vec to an OMPL
-    // state. Is there a better way to do this?
-    std::vector<double> jointStates;
-    for (int i = 0; i < mSpace->getDimension(); i++)
-      jointStates.push_back(curSol[i]);
-
-    auto ikState = mSpace->allocState();
-    mSpace->copyFromReals(ikState, jointStates);
-    stateMap[newNNVertex] = ikState;
+    stateMap[newNNVertex] = curSol;
 
     // Node meta-data.
     std::string newNodeName = "n." + std::to_string(mNNIKID);
@@ -250,16 +241,7 @@ void NNFrechet::addSubsampledEdge(
 
   for (auto curIntermediate : intermediateStates)
   {
-    // TODO: This exchange between OMPL and Eigen is a pain in the ass. How
-    // should it be handled?
-    std::vector<double> jointStates;
-    mSpace->copyToReals(jointStates, curIntermediate);
-
-    Eigen::VectorXd curConfig(mSpace->getDimension());
-    for (int i = 0; i < mSpace->getDimension(); i++)
-      curConfig[i] = jointStates[i];
-
-    Eigen::Isometry3d curFK = mFkFunc(curConfig);
+    Eigen::Isometry3d curFK = mFkFunc(curIntermediate);
     intermediatePoses.push_back(curFK);
   }
 
