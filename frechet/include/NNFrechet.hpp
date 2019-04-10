@@ -61,7 +61,7 @@ namespace NNFrechet {
     int mNumNN;
     int mDiscretization;
     // TODO: Set this intelligently.
-    int mCheckResolution = 0.05;
+    double mCheckResolution = 0.05;
 
     LPAStar mLPAStar;
 
