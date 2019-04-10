@@ -607,6 +607,8 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
 // OMPL Methods
 void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
 {
+  ompl::base::Planner::setProblemDefinition(pdef);
+
   // NOTE: I don't think anything is needed here, since start/goal aren't really
   // required for this planner.
   // TODO: Maybe just start?
