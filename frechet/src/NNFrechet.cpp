@@ -46,13 +46,13 @@ std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
   std::vector<Eigen::Isometry3d>& referencePath
 ) {
   int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
-  std::vector<int> sampledIDs = linIntSpace(0, mReferencePath.size() - 1, numPts);
+  std::vector<int> sampledIDs = linIntSpace(0, referencePath.size() - 1, numPts);
 
   std::vector<Eigen::Isometry3d> subSampled;
   for (int i = 0; i < sampledIDs.size(); i++)
   {
     int sampledIndex = sampledIDs[i];
-    Eigen::Isometry3d sampledPose = mReferencePath[sampledIndex];
+    Eigen::Isometry3d sampledPose = referencePath[sampledIndex];
     subSampled.push_back(sampledPose);
   }
 
