@@ -66,7 +66,7 @@ namespace NNFrechet {
     // Fields to record planning time.
     // Specific graphs.
     double mBuildNNTime = 0;
-    double mBuiltTesnorTime = 0;
+    double mBuildTesnorTime = 0;
     // Time for setup() (all 3 graphs + LPA*).
     double mInitStructuresTime = 0;
     // Total time on solve() (lazySP).

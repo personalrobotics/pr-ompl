@@ -702,6 +702,16 @@ ompl::base::PlannerStatus NNFrechet::solve(
     pdef_->addSolutionPath(constructSolution(finalPath));
 
     OMPL_INFORM("Solution Found!");
+
+    // Planning stats.
+    OMPL_INFORM("Length of path:    %d", finalPath.size());
+
+    OMPL_INFORM("Time to build NN Graph:    %f seconds", mBuildNNTime);
+    OMPL_INFORM("Time to build Tensor Product Graph:    %f seconds", mBuildTesnorTime);
+
+    OMPL_INFORM("Total time to init structures:    %f seconds", mInitStructuresTime);
+    OMPL_INFORM("Total time to search TPG:    %f seconds", mSearchTime);
+
     return ompl::base::PlannerStatus::EXACT_SOLUTION;
   } else {
     OMPL_INFORM("Solution NOT Found");
@@ -740,7 +750,7 @@ void NNFrechet::setup()
 
   boost::timer buildTensorTimer;
   buildTensorProductGraph();
-  mBuiltTesnorTime = buildTensorTimer.elapsed();
+  mBuildTesnorTime = buildTensorTimer.elapsed();
 
   std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
 
