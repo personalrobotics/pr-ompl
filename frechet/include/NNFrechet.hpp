@@ -63,6 +63,15 @@ namespace NNFrechet {
     // TODO: Set this intelligently.
     double mCheckResolution = 0.05;
 
+    // Fields to record planning time.
+    // Specific graphs.
+    double mBuildNNTime = 0;
+    double mBuiltTesnorTime = 0;
+    // Time for setup() (all 3 graphs + LPA*).
+    double mInitStructuresTime = 0;
+    // Total time on solve() (lazySP).
+    double mSearchTime = 0;
+
     LPAStar mLPAStar;
 
     // Function pointers that are set externally for FK/IK.

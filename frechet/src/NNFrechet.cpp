@@ -8,6 +8,8 @@
 #include <assert.h>         // Debug
 #include <chrono>           // record rewireTime
 
+#include <boost/timer.hpp>
+
 #include "NNFrechet.hpp"
 
 namespace NNFrechet
@@ -628,6 +630,8 @@ ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
 ompl::base::PlannerStatus NNFrechet::solve(
   const ompl::base::PlannerTerminationCondition& ptc
 ) {
+  boost::timer searchTimer;
+
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
 
   std::vector<Vertex> finalPath;
@@ -691,6 +695,8 @@ ompl::base::PlannerStatus NNFrechet::solve(
     }
   }
 
+  mSearchTime = searchTimer.elapsed();
+
   if(solutionFound)
   {
     pdef_->addSolutionPath(constructSolution(finalPath));
@@ -723,15 +729,25 @@ void NNFrechet::setup()
   if (mDistanceFunc == NULL )
     throw ompl::Exception("Task-space distance function not set!");
 
+  boost::timer initStructuresTimer;
+
   // Build all three graphs.
   buildReferenceGraph();
+
+  boost::timer buildNNTimer;
   buildNNGraph();
+  mBuildNNTime = buildNNTimer.elapsed();
+
+  boost::timer buildTensorTimer;
   buildTensorProductGraph();
+  mBuiltTesnorTime = buildTensorTimer.elapsed();
 
   std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
 
   mLPAStar.initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
   std::cout << "[INFO]: LPA* structure initialized." << std::endl;
+
+  mInitStructuresTime = initStructuresTimer.elapsed();
 }
 
 
