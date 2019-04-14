@@ -519,7 +519,9 @@ std::vector<Vertex> NNFrechet::extractNNPath(
 ) {
   VPNNComponentMap nnComponentMap =
     get(&VProp::nnComponent, mTensorProductGraph);
+  VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
 
+  double bottleneckCost = 0;
   std::vector<Vertex> nnPath;
   for (int i = 0; i < tensorProductPath.size(); i++)
   {
@@ -536,8 +538,14 @@ std::vector<Vertex> NNFrechet::extractNNPath(
     {
       nnPath.push_back(curNNVertex);
     }
+
+    // The bottleneck cost *is* the Frechet error.
+    double curCost = frechetMap[tensorVertex];
+    if (curCost > bottleneckCost)
+      bottleneckCost = curCost;
   }
 
+  mFinalError = bottleneckCost;
   return nnPath;
 }
 
@@ -704,6 +712,7 @@ ompl::base::PlannerStatus NNFrechet::solve(
     OMPL_INFORM("Solution Found!");
 
     // Planning stats.
+    OMPL_INFORM("Final Frechet Error:    %f", mFinalError);
     OMPL_INFORM("Length of path:    %d", finalPath.size());
 
     OMPL_INFORM("Time to build NN Graph:    %f seconds", mBuildNNTime);
