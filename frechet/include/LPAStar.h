@@ -1,19 +1,8 @@
 #ifndef LPA_STAR_
 #define LPA_STAR_
 
-// TODO: Determine which of these are actually needed.
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/graph/reverse_graph.hpp>
-#include <exception>
-#include <queue>
-#include <string>
-#include <time.h>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
-
-#include <boost/program_options.hpp>
 
 #include "heap_indexed.h"
 #include "util.hpp"
@@ -81,7 +70,7 @@ public:
   /// Return true if the priority queue contains no nodes.
   bool isEmptyPQ();
 
-  /// Get the samllest priority value in the queue.
+  /// Get the smallest priority value in the queue.
   double peekPQ();
 
   /// Remove and return the node with the smallest priority in the PQ.
@@ -100,9 +89,9 @@ public:
   /// \param[in] node Node to compute LPA* priority of.
   double calculateKey(Vertex &node);
 
-  /// This must be called called when u's dist and/or lookahead dist
-  /// (and therefore consistency) may have been changed
-  /// this ensures u is in the queue correctly
+  /// This must be called when u's dist and/or lookahead dist (and therefore
+  /// consistency) may have been changed. This ensures u is in the queue
+  /// correctly.
   /// \param[in] g Graph u belongs to.
   /// \param[in] u Node that must be updated.
   void updateVertex(Graph &g, Vertex &u);
