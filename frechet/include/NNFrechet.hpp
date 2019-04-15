@@ -285,14 +285,35 @@ public:
   /// \param[in] nnV Target of edge to mark in /c mNNGraph.
   void markEdgeInCollision(Vertex &nnU, Vertex &nnV);
 
-  // OMPL required methods
+  /// NOTE: OMPL required methods.
+
+  /// Mark an edge of \c mNNGraph as being in collision. Also sets all
+  /// *corresponding* nodes of \c mTensorProductGraph to have infinite weight,
+  /// and update \c mLPAStar accordingly.
+  ///
+  /// \param[in] nnU Source of edge to mark in /c mNNGraph.
+  /// \param[in] nnV Target of edge to mark in /c mNNGraph.
   void setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef);
+
+  /// Helper that converts a Boost graph path on \c mNNGraph into an OMPL path
+  /// to return out.
+  ///
+  /// \param[in] nnPath Found path on \c mNNGraph.
   ompl::base::PathPtr constructSolution(std::vector<Vertex> &nnPath);
-  // Use LazySP to search for a collision free path that minimizes Frechet.
+
+  /// Use LazySP to search for a collision free path that minimizes Frechet.
+  ///
+  /// \param[in] ptc OMPL termination condition.
   ompl::base::PlannerStatus
   solve(const ompl::base::PlannerTerminationCondition &ptc);
+
+  /// Use LazySP to search for a collision free path that minimizes Frechet with
+  /// a given timeout. Converts \c solveTime and calls the above method.
+  ///
+  /// \param[in] solveTime Time converted into an OMPL termination condition.
   ompl::base::PlannerStatus solve(double solveTime);
-  // Inits all three graphs, as well as LPA* structures.
+
+  /// Inits all three graphs, as well as LPA* structures.
   void setup();
 };
 
