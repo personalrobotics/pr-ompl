@@ -16,61 +16,92 @@ namespace NNFrechet {
 
 /// The OMPL Planner class that implements the NNF algorithm.
 class NNFrechet : public ompl::base::Planner {
+  /// Used to sample random points on the reference path to IK.
   std::default_random_engine mRandomGenerator;
 
-  /// The pointer to the OMPL state space
+  /// The pointer to the OMPL state space.
   const ompl::base::StateSpacePtr mSpace;
 
+  /// Super-sampled reference path encoded as a one-dimensional graph.
   Graph mReferenceGraph;
+
+  /// Sampled nearest-neighbor graph in C-space. Composed of IK solutions for
+  /// task-space points on the reference path.
   Graph mNNGraph;
+
+  /// Tensor-product graph between the above two graphs. Used to compute the
+  /// minimum-Frechet path on the NN Graph.
   Graph mTensorProductGraph;
 
-  // Map name of TPG Node -> Vertex.
+  /// Map of TPG node's name -> TPG node.
   std::unordered_map<std::string, Vertex> mNameToVertex;
 
-  // Keep around EACH path's corresponding set of edges in the tensor product
-  // graph. By making this a map of [U_NN, V_NN] -> {E_TPG}, we can
-  // "knock out" edges quickly in the TPG that correspond to U -> V in the
-  // NN Graph. This is an *optimization* when handling a collision.
+  /// Keep around EACH path's corresponding set of edges in the tensor product
+  /// graph. By making this a map of [U_NN, V_NN] -> {E_TPG}, we can
+  /// "knock out" edges quickly in the TPG that correspond to U -> V in the
+  /// NN Graph. This is an *optimization* when handling a collision.
   std::unordered_map<std::string, std::vector<Edge>> mNNToTPGEdges;
 
-  // Reference path we were given.
+  /// (Super-sampled version of) given reference path.
   std::vector<Eigen::Isometry3d> mReferencePath;
 
+  /// Represent first and last waypoint on reference path.
   Vertex mRefStartNode;
   Vertex mRefGoalNode;
 
+  /// Dummy start and target nodes a path on the NN Graph must start and end at.
+  /// These are later stripped from the final motion plan.
   Vertex mNNStartNode;
   Vertex mNNGoalNode;
 
+  /// Start node for our bottleneck search on the TPG. Product of
+  /// \c mRefStartNode and \c mNNStartNode.
   Vertex mTensorStartNode;
+
+  /// Target node for our bottleneck search on the TPG. Product of
+  /// \c mRefGoalNode and \c mNNGoalNode.
   Vertex mTensorGoalNode;
 
+  /// Increments so each sampled IK node in \c mNNGraph has a unique name.
   int mNNIKID = 0;
+
+  /// Increments so each node in \c mNNGraph resulting from interpolation has a
+  /// unique name.
   int mNNSubsampleID = 0;
 
-  // Tensor-product bottleneck vertex.
-  Vertex mBottleneckVertex;
-  // Cost of found tensor-product path.
-  double mBottleneckCost;
+  /// NOTE: NNF parameters.
 
-  // Parameter Related
+  /// How many task-space waypoints to super-sample from the given reference
+  /// path.
   int mNumWaypoints;
+
+  /// Multiplied by \c mNumWaypoints to get the IK budget for building
+  /// \c mNNGraph.
   int mIKMultiplier;
+
+  /// How many nearest-neighbors to connect to in \c mNNGraph.
   int mNumNN;
+
+  /// How finely edges in \c mNNGraph should be sub-sampled to increase accuracy
+  /// of Frechet computation.
   int mDiscretization;
-  // TODO: Set this intelligently.
+
+  /// Default resolution to collision-check in C-space.
   double mCheckResolution = 0.05;
 
-  // Fields to record planning stats.
-  // Final Frechet error of path.
+  /// NOTE: Fields to record planning stats.
+
+  /// Frechet cost of found tensor-product path.
   double mFinalError;
-  // Build time for specific graphs.
+
+  /// Build times for specific graphs.
   double mBuildNNTime = 0;
   double mBuildTesnorTime = 0;
-  // Time for setup() (all 3 graphs + LPA*).
+
+  /// Total time spent on \c setup() (all 3 graphs + LPA*).
   double mInitStructuresTime = 0;
-  // Total time on solve() (lazySP).
+
+  /// Total time spent on \c solve() (i.e. LazySP).
   double mSearchTime = 0;
 
   std::shared_ptr<LPAStar> mLPAStar;
