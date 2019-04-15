@@ -1,58 +1,43 @@
-#include <algorithm>        // std::reverse
-#include <cmath>            // pow, sqrt
-#include <iostream>         // std::cerr
-#include <queue>            // std::priority_queue
-#include <set>              // std::set
-#include <unordered_set>    // std::unordered_set
-#include <fstream>          // Write to file
-#include <assert.h>         // Debug
-#include <chrono>           // record rewireTime
+#include <algorithm>     // std::reverse
+#include <assert.h>      // Debug
+#include <chrono>        // record rewireTime
+#include <cmath>         // pow, sqrt
+#include <fstream>       // Write to file
+#include <iostream>      // std::cerr
+#include <queue>         // std::priority_queue
+#include <set>           // std::set
+#include <unordered_set> // std::unordered_set
 
 #include <boost/timer.hpp>
 
 #include "NNFrechet.hpp"
 
-namespace NNFrechet
-{
+namespace NNFrechet {
 
 NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
-  : ompl::base::Planner(si, "NNFrechet")
-  , mSpace(si->getStateSpace())
-  , mNumWaypoints(5)
-  , mIKMultiplier(5)
-  , mNumNN(5)
-  , mDiscretization(3)
-{
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
+      mNumWaypoints(5), mIKMultiplier(5), mNumNN(5), mDiscretization(3) {
   // TODO: How should default params be set?
   mRandomGenerator.seed(1);
 }
 
-NNFrechet::NNFrechet(
-  const ompl::base::SpaceInformationPtr &si,
-  int numWaypoints,
-  int ikMultiplier,
-  int numNN,
-  int discretization,
-  int seed)
-  : ompl::base::Planner(si, "NNFrechet")
-  , mSpace(si->getStateSpace())
-  , mNumWaypoints(numWaypoints)
-  , mIKMultiplier(ikMultiplier)
-  , mNumNN(numNN)
-  , mDiscretization(discretization)
-{
+NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
+                     int numWaypoints, int ikMultiplier, int numNN,
+                     int discretization, int seed)
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
+      mNumWaypoints(numWaypoints), mIKMultiplier(ikMultiplier), mNumNN(numNN),
+      mDiscretization(discretization) {
   mRandomGenerator.seed(seed);
 }
 
-std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
-  std::vector<Eigen::Isometry3d>& referencePath
-) {
+std::vector<Eigen::Isometry3d>
+NNFrechet::subsampleRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
   int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
-  std::vector<int> sampledIDs = linIntSpace(0, referencePath.size() - 1, numPts);
+  std::vector<int> sampledIDs =
+      linIntSpace(0, referencePath.size() - 1, numPts);
 
   std::vector<Eigen::Isometry3d> subSampled;
-  for (int i = 0; i < sampledIDs.size(); i++)
-  {
+  for (int i = 0; i < sampledIDs.size(); i++) {
     int sampledIndex = sampledIDs[i];
     Eigen::Isometry3d sampledPose = referencePath[sampledIndex];
     subSampled.push_back(sampledPose);
@@ -61,64 +46,50 @@ std::vector<Eigen::Isometry3d> NNFrechet::subsampleRefPath(
   return subSampled;
 }
 
-void NNFrechet::setRefPath(
-  std::vector<Eigen::Isometry3d>& referencePath
-) {
+void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
   // Don't use the entire reference path. Subsample it.
   mReferencePath = subsampleRefPath(referencePath);
 }
 
 void NNFrechet::setFKFunc(
-  std::function<Eigen::Isometry3d(ompl::base::State*)> fkFunc
-) {
+    std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
   mFkFunc = fkFunc;
 }
 
 void NNFrechet::setIKFunc(
-  std::function<std::vector<ompl::base::State*>(Eigen::Isometry3d&, int)> ikFunc
-) {
+    std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
+        ikFunc) {
   mIkFunc = ikFunc;
 }
 
 void NNFrechet::setDistanceFunc(
-  std::function<double(Eigen::Isometry3d&, Eigen::Isometry3d&)> distanceFunc
-) {
+    std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
+        distanceFunc) {
   mDistanceFunc = distanceFunc;
 }
 
-void NNFrechet::setNumWaypoints(int numWaypoints)
-{
+void NNFrechet::setNumWaypoints(int numWaypoints) {
   mNumWaypoints = numWaypoints;
 }
 
-void NNFrechet::setIKMultiplier(int ikMultiplier)
-{
+void NNFrechet::setIKMultiplier(int ikMultiplier) {
   mIKMultiplier = ikMultiplier;
 }
 
-void NNFrechet::setNumNN(int numNN)
-{
-  mNumNN = numNN;
-}
+void NNFrechet::setNumNN(int numNN) { mNumNN = numNN; }
 
-void NNFrechet::setDiscretization(int discretization)
-{
+void NNFrechet::setDiscretization(int discretization) {
   mDiscretization = discretization;
 }
 
-void NNFrechet::setRandomSeed(int seed)
-{
-  mRandomGenerator.seed(seed);
-}
+void NNFrechet::setRandomSeed(int seed) { mRandomGenerator.seed(seed); }
 
-void NNFrechet::buildReferenceGraph()
-{
+void NNFrechet::buildReferenceGraph() {
   VPNameMap nameMap = get(&VProp::name, mReferenceGraph);
   VPPoseEEMap poseMap = get(&VProp::poseEE, mReferenceGraph);
 
   Vertex prevVertex;
-  for (int i = 0; i < mReferencePath.size(); i++)
-  {
+  for (int i = 0; i < mReferencePath.size(); i++) {
     Vertex newRefVertex = add_vertex(mReferenceGraph);
 
     Eigen::Isometry3d curPose = mReferencePath[i];
@@ -127,8 +98,7 @@ void NNFrechet::buildReferenceGraph()
     std::string refVertexName = "r" + std::to_string(i);
     nameMap[newRefVertex] = refVertexName;
 
-    if (i > 0)
-    {
+    if (i > 0) {
       add_edge(prevVertex, newRefVertex, mReferenceGraph);
     }
 
@@ -142,19 +112,17 @@ void NNFrechet::buildReferenceGraph()
   }
 }
 
-std::vector<Vertex> NNFrechet::sampleIKNodes(
-  Eigen::Isometry3d& curWaypoint,
-  int numSolutions
-) {
+std::vector<Vertex> NNFrechet::sampleIKNodes(Eigen::Isometry3d &curWaypoint,
+                                             int numSolutions) {
   VPNameMap nameMap = get(&VProp::name, mNNGraph);
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
   VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
 
   std::vector<Vertex> sampledNodes;
-  std::vector<ompl::base::State*> ikSolutions = mIkFunc(curWaypoint, numSolutions);
+  std::vector<ompl::base::State *> ikSolutions =
+      mIkFunc(curWaypoint, numSolutions);
 
-  for (auto curSol : ikSolutions)
-  {
+  for (auto curSol : ikSolutions) {
     Vertex newNNVertex = add_vertex(mNNGraph);
 
     Eigen::Isometry3d curPose = mFkFunc(curSol);
@@ -172,12 +140,10 @@ std::vector<Vertex> NNFrechet::sampleIKNodes(
   return sampledNodes;
 }
 
-std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
-  int numSamples
-) {
+std::vector<std::vector<Vertex>> NNFrechet::sampleNNGraphNodes(int numSamples) {
   // Record which new nodes were sampled, and which indices from the reference
   // path they were sampled from.
-  std::vector< std::vector<Vertex> > newSampledNodes;
+  std::vector<std::vector<Vertex>> newSampledNodes;
   newSampledNodes.resize(mReferencePath.size());
 
   // We go in the range [1, refIDs.size() - 2] so we ignore the endpoints. They
@@ -187,8 +153,7 @@ std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
 
   // Sample indices on the reference path.
   std::vector<int> indexSampleCounts(mReferencePath.size(), 0);
-  for (int i = 0; i < numSamples; i++)
-  {
+  for (int i = 0; i < numSamples; i++) {
     std::uniform_int_distribution<int> unifrom(beginRefIndex, endRefIndex);
     int randIndex = unifrom(mRandomGenerator);
     indexSampleCounts.at(randIndex) = indexSampleCounts.at(randIndex) + 1;
@@ -196,14 +161,13 @@ std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
 
   // Sample IK solutions for each reference path point based on how many
   // times the above loop sampled it.
-  for (int sampleIndex = beginRefIndex; sampleIndex <= endRefIndex; sampleIndex++)
-  {
+  for (int sampleIndex = beginRefIndex; sampleIndex <= endRefIndex;
+       sampleIndex++) {
     int sampleCount = indexSampleCounts.at(sampleIndex);
-    Eigen::Isometry3d& sampleWaypoint = mReferencePath.at(sampleIndex);
+    Eigen::Isometry3d &sampleWaypoint = mReferencePath.at(sampleIndex);
 
     auto sampledNodeVector = sampleIKNodes(sampleWaypoint, sampleCount);
-    for (auto newNode : sampledNodeVector)
-    {
+    for (auto newNode : sampledNodeVector) {
       newSampledNodes.at(sampleIndex).push_back(newNode);
     }
   }
@@ -211,45 +175,39 @@ std::vector< std::vector<Vertex> > NNFrechet::sampleNNGraphNodes(
   return newSampledNodes;
 }
 
-void NNFrechet::addSubsampledEdge(
-  Vertex& firstNNVertex,
-  Vertex& secondNNVertex
-) {
+void NNFrechet::addSubsampledEdge(Vertex &firstNNVertex,
+                                  Vertex &secondNNVertex) {
   VPNameMap nameMap = get(&VProp::name, mNNGraph);
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
   VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
 
   // Handle the cases where edge is not subsampled.
-  if (firstNNVertex == mNNStartNode || secondNNVertex == mNNGoalNode)
-  {
-   add_edge(firstNNVertex, secondNNVertex, mNNGraph);
-   return;
+  if (firstNNVertex == mNNStartNode || secondNNVertex == mNNGoalNode) {
+    add_edge(firstNNVertex, secondNNVertex, mNNGraph);
+    return;
   }
 
-  std::vector<ompl::base::State*> intermediateStates;
+  std::vector<ompl::base::State *> intermediateStates;
   std::vector<Eigen::Isometry3d> intermediatePoses;
 
   auto firstState = stateMap[firstNNVertex];
   auto secondState = stateMap[secondNNVertex];
 
   // Interpolate the intermediate configs.
-  for (int i = 0; i < mDiscretization; i++)
-  {
+  for (int i = 0; i < mDiscretization; i++) {
     auto curIntermediate = mSpace->allocState();
     mSpace->interpolate(firstState, secondState,
-      (1.0 + i)/(mDiscretization+1), curIntermediate);
+                        (1.0 + i) / (mDiscretization + 1), curIntermediate);
     intermediateStates.push_back(curIntermediate);
   }
 
-  for (auto curIntermediate : intermediateStates)
-  {
+  for (auto curIntermediate : intermediateStates) {
     Eigen::Isometry3d curFK = mFkFunc(curIntermediate);
     intermediatePoses.push_back(curFK);
   }
 
   Vertex prevVertex = firstNNVertex;
-  for (int i = 0; i < mDiscretization; i++)
-  {
+  for (int i = 0; i < mDiscretization; i++) {
     // New node creation and data insertion.
     Vertex newSubVertex = add_vertex(mNNGraph);
     std::string newNodeName = "a" + std::to_string(mNNSubsampleID);
@@ -261,8 +219,7 @@ void NNFrechet::addSubsampledEdge(
     // Add an "internal" edge resulting from subsampling an original edge.
     add_edge(prevVertex, newSubVertex, mNNGraph);
     // And if we reached the end...
-    if (i == mDiscretization - 1)
-    {
+    if (i == mDiscretization - 1) {
       add_edge(newSubVertex, secondNNVertex, mNNGraph);
     }
 
@@ -271,13 +228,12 @@ void NNFrechet::addSubsampledEdge(
   }
 }
 
-void NNFrechet::buildNNGraph()
-{
+void NNFrechet::buildNNGraph() {
   VPNameMap nameMap = get(&VProp::name, mNNGraph);
   VPPoseEEMap poseMap = get(&VProp::poseEE, mNNGraph);
 
   // Set up the variable that keeps track of nodes sampled for the NN Graph.
-  std::vector< std::vector<Vertex> > sampledNNGraphNodes;
+  std::vector<std::vector<Vertex>> sampledNNGraphNodes;
   sampledNNGraphNodes.resize(mReferencePath.size());
 
   // NOTE: Add dummy start vertex to the NN Graph.
@@ -292,68 +248,57 @@ void NNFrechet::buildNNGraph()
 
   // NOTE: We always sample the start and end vertices since we want the
   // path to reach those. We also sample multiple solutions for each.
-  Eigen::Isometry3d& firstWaypoint = mReferencePath.at(0);
-  std::vector<Vertex> firstWaypointVertices = sampleIKNodes(firstWaypoint, mIKMultiplier);
+  Eigen::Isometry3d &firstWaypoint = mReferencePath.at(0);
+  std::vector<Vertex> firstWaypointVertices =
+      sampleIKNodes(firstWaypoint, mIKMultiplier);
 
-  for (Vertex firstWaypointNode : firstWaypointVertices)
-  {
+  for (Vertex firstWaypointNode : firstWaypointVertices) {
     add_edge(mNNStartNode, firstWaypointNode, mNNGraph);
     sampledNNGraphNodes.at(0).push_back(firstWaypointNode);
   }
 
   // NOTE: Now repeat eveything we did, but for the last waypoint on the
   // reference path.
-  Eigen::Isometry3d& lastWaypoint = mReferencePath.back();
-  std::vector<Vertex> lastWaypointVertices = sampleIKNodes(lastWaypoint, mIKMultiplier);
+  Eigen::Isometry3d &lastWaypoint = mReferencePath.back();
+  std::vector<Vertex> lastWaypointVertices =
+      sampleIKNodes(lastWaypoint, mIKMultiplier);
 
-  for (Vertex lastWaypointNode : lastWaypointVertices)
-  {
+  for (Vertex lastWaypointNode : lastWaypointVertices) {
     sampledNNGraphNodes.back().push_back(lastWaypointNode);
     add_edge(lastWaypointNode, mNNGoalNode, mNNGraph);
   }
 
   int remainingIKBudget = mNumWaypoints * mIKMultiplier;
   // We already used some of this for the end points.
-  remainingIKBudget -= 2*mIKMultiplier;
+  remainingIKBudget -= 2 * mIKMultiplier;
 
   // Sample nodes for waypoints besides the endpoints of the reference path.
   auto sampledNodes = sampleNNGraphNodes(remainingIKBudget);
 
-  for (int refIndex = 0; refIndex < sampledNodes.size(); refIndex++)
-  {
+  for (int refIndex = 0; refIndex < sampledNodes.size(); refIndex++) {
     for (auto indexNewNode : sampledNodes.at(refIndex))
       sampledNNGraphNodes.at(refIndex).push_back(indexNewNode);
   }
 
   // Connect each raodmap node to its kNN in C-Space that are sampled *further*
   // down the reference path (to ensure monotonicity).
-  for (int refIndex = 0; refIndex < sampledNNGraphNodes.size(); refIndex++)
-  {
-    for (auto& nodeSampledAtWaypoint : sampledNNGraphNodes.at(refIndex))
-    {
+  for (int refIndex = 0; refIndex < sampledNNGraphNodes.size(); refIndex++) {
+    for (auto &nodeSampledAtWaypoint : sampledNNGraphNodes.at(refIndex)) {
       std::vector<Vertex> deeperNodes = flattenVertexList(
-        sampledNNGraphNodes,
-        refIndex + 1,
-        sampledNNGraphNodes.size() - 1);
+          sampledNNGraphNodes, refIndex + 1, sampledNNGraphNodes.size() - 1);
 
       // Get neighbors sampled from waypoints further along the reference path.
       std::vector<Vertex> cSpaceNeighbors = findKnnNodes(
-        nodeSampledAtWaypoint,
-        deeperNodes,
-        mNNGraph,
-        mNumNN,
-        mSpace);
+          nodeSampledAtWaypoint, deeperNodes, mNNGraph, mNumNN, mSpace);
 
-      for (auto& closeNode : cSpaceNeighbors)
+      for (auto &closeNode : cSpaceNeighbors)
         addSubsampledEdge(nodeSampledAtWaypoint, closeNode);
     }
   }
 }
 
-void NNFrechet::addTensorProductNodes(
-  std::vector<Vertex>& refNodes,
-  std::vector<Vertex>& nnNodes
-) {
+void NNFrechet::addTensorProductNodes(std::vector<Vertex> &refNodes,
+                                      std::vector<Vertex> &nnNodes) {
   VPNameMap refNameMap = get(&VProp::name, mReferenceGraph);
   VPPoseEEMap refPoseMap = get(&VProp::poseEE, mReferenceGraph);
 
@@ -363,16 +308,15 @@ void NNFrechet::addTensorProductNodes(
 
   VPNameMap tensorNameMap = get(&VProp::name, mTensorProductGraph);
   VPStateMap tensorStateMap = get(&VProp::state, mTensorProductGraph);
-  VPNNComponentMap nnComponentMap = get(&VProp::nnComponent, mTensorProductGraph);
+  VPNNComponentMap nnComponentMap =
+      get(&VProp::nnComponent, mTensorProductGraph);
   VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
 
   int numTPGNodes = 0;
-  for (const auto& curRefNode : refNodes)
-  {
+  for (const auto &curRefNode : refNodes) {
     std::string refNodeName = refNameMap[curRefNode];
 
-    for (const auto& curNNNode : nnNodes)
-    {
+    for (const auto &curNNNode : nnNodes) {
       std::string nnNodeName = nnNameMap[curNNNode];
 
       Vertex newTensorNode = add_vertex(mTensorProductGraph);
@@ -405,19 +349,16 @@ void NNFrechet::addTensorProductNodes(
   OMPL_INFORM("TPG has %d nodes.", numTPGNodes);
 }
 
-void NNFrechet::addTensorProductEdge(
-  Vertex& v1,
-  Vertex& v2
-) {
+void NNFrechet::addTensorProductEdge(Vertex &v1, Vertex &v2) {
   VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
   EPLengthMap edgeLengthMap = get(&EProp::length, mTensorProductGraph);
-  VPNNComponentMap nnComponentMap = get(&VProp::nnComponent, mTensorProductGraph);
+  VPNNComponentMap nnComponentMap =
+      get(&VProp::nnComponent, mTensorProductGraph);
 
   std::pair<Edge, bool> edgePair = add_edge(v1, v2, mTensorProductGraph);
   bool edgeAdded = edgePair.second;
 
-  if (edgeAdded)
-  {
+  if (edgeAdded) {
     Edge newEdge = edgePair.first;
     edgeLengthMap[newEdge] = std::max(frechetMap[v1], frechetMap[v2]);
 
@@ -425,8 +366,7 @@ void NNFrechet::addTensorProductEdge(
     Vertex nnV = nnComponentMap[v2];
 
     // This actually represents an edge in the roadmap.
-    if (nnU != nnV)
-    {
+    if (nnU != nnV) {
       VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
       std::string nnEdgeString = nnNameMap[nnU] + "_" + nnNameMap[nnV];
 
@@ -439,21 +379,18 @@ void NNFrechet::addTensorProductEdge(
   }
 }
 
-void NNFrechet::connectTensorProductNodes(
-  std::vector<Vertex>& refNodes,
-  std::vector<Vertex>& nnNodes
-) {
+void NNFrechet::connectTensorProductNodes(std::vector<Vertex> &refNodes,
+                                          std::vector<Vertex> &nnNodes) {
   VPNameMap refNameMap = get(&VProp::name, mReferenceGraph);
   VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
   VPNameMap tensorNameMap = get(&VProp::name, mTensorProductGraph);
 
-  for (const auto& curRefNode : refNodes)
-  {
+  for (const auto &curRefNode : refNodes) {
     std::string refNodeName = refNameMap[curRefNode];
-    std::vector<Vertex> refNodeNeighbors = getNeighbors(curRefNode, mReferenceGraph);
+    std::vector<Vertex> refNodeNeighbors =
+        getNeighbors(curRefNode, mReferenceGraph);
 
-    for (const auto& curNNNode : nnNodes)
-    {
+    for (const auto &curNNNode : nnNodes) {
       std::string nnNodeName = nnNameMap[curNNNode];
       std::vector<Vertex> nnNodeNeighbors = getNeighbors(curNNNode, mNNGraph);
 
@@ -461,8 +398,7 @@ void NNFrechet::connectTensorProductNodes(
       Vertex curTensorNode = mNameToVertex[tensorNodeName];
 
       // Option A: Take a step on the reference graph.
-      for (Vertex refNeighbor : refNodeNeighbors)
-      {
+      for (Vertex refNeighbor : refNodeNeighbors) {
         std::string refNeighborName = refNameMap[refNeighbor];
         std::string tensorNeighborName = refNeighborName + "_" + nnNodeName;
 
@@ -471,8 +407,7 @@ void NNFrechet::connectTensorProductNodes(
       }
 
       // Option B: Take a step on the NN graph.
-      for (Vertex nnNeighbor : nnNodeNeighbors)
-      {
+      for (Vertex nnNeighbor : nnNodeNeighbors) {
         std::string nnNeighborName = nnNameMap[nnNeighbor];
         std::string tensorNeighborName = refNodeName + "_" + nnNeighborName;
 
@@ -481,13 +416,12 @@ void NNFrechet::connectTensorProductNodes(
       }
 
       // Option C: Take a step on *both*.
-      for (Vertex refNeighbor : refNodeNeighbors)
-      {
-        for (Vertex nnNeighbor : nnNodeNeighbors)
-        {
+      for (Vertex refNeighbor : refNodeNeighbors) {
+        for (Vertex nnNeighbor : nnNodeNeighbors) {
           std::string refNeighborName = refNameMap[refNeighbor];
           std::string nnNeighborName = nnNameMap[nnNeighbor];
-          std::string tensorNeighborName = refNeighborName + "_" + nnNeighborName;
+          std::string tensorNeighborName =
+              refNeighborName + "_" + nnNeighborName;
 
           Vertex tensorNeighborNode = mNameToVertex[tensorNeighborName];
           addTensorProductEdge(curTensorNode, tensorNeighborNode);
@@ -497,8 +431,7 @@ void NNFrechet::connectTensorProductNodes(
   }
 }
 
-void NNFrechet::buildTensorProductGraph()
-{
+void NNFrechet::buildTensorProductGraph() {
   std::vector<Vertex> refNodes = getGraphVertices(mReferenceGraph);
   OMPL_INFORM("Ref Graph  has %d nodes.", refNodes.size());
 
@@ -512,17 +445,15 @@ void NNFrechet::buildTensorProductGraph()
   connectTensorProductNodes(refNodes, nnNodes);
 }
 
-std::vector<Vertex> NNFrechet::extractNNPath(
-  std::vector<Vertex>& tensorProductPath
-) {
+std::vector<Vertex>
+NNFrechet::extractNNPath(std::vector<Vertex> &tensorProductPath) {
   VPNNComponentMap nnComponentMap =
-    get(&VProp::nnComponent, mTensorProductGraph);
+      get(&VProp::nnComponent, mTensorProductGraph);
   VPFrechetMap frechetMap = get(&VProp::frechet, mTensorProductGraph);
 
   double bottleneckCost = 0;
   std::vector<Vertex> nnPath;
-  for (int i = 0; i < tensorProductPath.size(); i++)
-  {
+  for (int i = 0; i < tensorProductPath.size(); i++) {
     Vertex tensorVertex = tensorProductPath[i];
     Vertex curNNVertex = nnComponentMap[tensorVertex];
 
@@ -532,8 +463,7 @@ std::vector<Vertex> NNFrechet::extractNNPath(
       continue;
 
     // This represents an actual edge in the NN Graph.
-    if (nnPath.size() == 0 || nnPath.back() != curNNVertex)
-    {
+    if (nnPath.size() == 0 || nnPath.back() != curNNVertex) {
       nnPath.push_back(curNNVertex);
     }
 
@@ -547,8 +477,7 @@ std::vector<Vertex> NNFrechet::extractNNPath(
   return nnPath;
 }
 
-bool NNFrechet::checkEdgeEvaluation(Vertex& source, Vertex& target)
-{
+bool NNFrechet::checkEdgeEvaluation(Vertex &source, Vertex &target) {
   EPEvaluatedMap evalMap = get(&EProp::evaluated, mNNGraph);
   Edge edgeUV = boost::edge(source, target, mNNGraph).first;
 
@@ -556,32 +485,27 @@ bool NNFrechet::checkEdgeEvaluation(Vertex& source, Vertex& target)
   return evalMap[edgeUV];
 }
 
-bool NNFrechet::evaluateEdge(
-  Vertex& source,
-  Vertex& target
-) {
+bool NNFrechet::evaluateEdge(Vertex &source, Vertex &target) {
   // First, mark the edge as evlauated.
   EPEvaluatedMap evalMap = get(&EProp::evaluated, mNNGraph);
   Edge edgeUV = boost::edge(source, target, mNNGraph).first;
   evalMap[edgeUV] = true;
 
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
-  ompl::base::State* startState  = stateMap[source];
-  ompl::base::State* endState = stateMap[target];
+  ompl::base::State *startState = stateMap[source];
+  ompl::base::State *endState = stateMap[target];
 
   auto validityChecker = si_->getStateValidityChecker();
   auto checkState = mSpace->allocState();
 
   double length = mSpace->distance(startState, endState);
-  int numQ = ceil(length/mCheckResolution);
+  int numQ = ceil(length / mCheckResolution);
 
   // Interpolate and coll-check the edge.
-  double step = 1.0/numQ;
-  for (double alpha = 0.0; alpha <= 1.0; alpha += step)
-  {
+  double step = 1.0 / numQ;
+  for (double alpha = 0.0; alpha <= 1.0; alpha += step) {
     mSpace->interpolate(startState, endState, alpha, checkState);
-    if (!validityChecker->isValid(checkState))
-    {
+    if (!validityChecker->isValid(checkState)) {
       mSpace->freeState(checkState);
       return true;
     }
@@ -591,19 +515,17 @@ bool NNFrechet::evaluateEdge(
   return false;
 }
 
-void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
-{
+void NNFrechet::markEdgeInCollision(Vertex &nnU, Vertex &nnV) {
   EPLengthMap edgeLengthMap = get(&EProp::length, mTensorProductGraph);
   VPNameMap nnNameMap = get(&VProp::name, mNNGraph);
 
   std::string nnEdgeString = nnNameMap[nnU] + "_" + nnNameMap[nnV];
-  std::vector<Edge>& mappedTPGEdges = mNNToTPGEdges[nnEdgeString];
+  std::vector<Edge> &mappedTPGEdges = mNNToTPGEdges[nnEdgeString];
 
-  for (const auto& curEdge : mappedTPGEdges)
+  for (const auto &curEdge : mappedTPGEdges)
     edgeLengthMap[curEdge] = mLPAStar->mInfVal;
 
-  for (const auto& updateEdge : mappedTPGEdges)
-  {
+  for (const auto &updateEdge : mappedTPGEdges) {
     Vertex tensorU = source(updateEdge, mTensorProductGraph);
     Vertex tensorV = target(updateEdge, mTensorProductGraph);
 
@@ -613,8 +535,8 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
 }
 
 // OMPL Methods
-void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef)
-{
+void NNFrechet::setProblemDefinition(
+    const ompl::base::ProblemDefinitionPtr &pdef) {
   ompl::base::Planner::setProblemDefinition(pdef);
 
   // NOTE: I don't think anything is needed here, since start/goal aren't really
@@ -622,9 +544,9 @@ void NNFrechet::setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pde
   // TODO: Maybe just start?
 }
 
-ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
-{
-  ompl::geometric::PathGeometric* pathOut = new ompl::geometric::PathGeometric(si_);
+ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex> &nnPath) {
+  ompl::geometric::PathGeometric *pathOut =
+      new ompl::geometric::PathGeometric(si_);
 
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
   for (Vertex curNode : nnPath)
@@ -633,9 +555,8 @@ ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex>& nnPath)
   return ompl::base::PathPtr(pathOut);
 }
 
-ompl::base::PlannerStatus NNFrechet::solve(
-  const ompl::base::PlannerTerminationCondition& ptc
-) {
+ompl::base::PlannerStatus
+NNFrechet::solve(const ompl::base::PlannerTerminationCondition &ptc) {
   boost::timer searchTimer;
 
   VPStateMap stateMap = get(&VProp::state, mNNGraph);
@@ -645,12 +566,11 @@ ompl::base::PlannerStatus NNFrechet::solve(
 
   // Lazy SP style. Just keep searching until you find a collision free
   // path that works, all in collision, or ptc violated.
-  while (ptc == false)
-  {
+  while (ptc == false) {
     finalPath.clear();
 
     std::vector<Vertex> shortestPath =
-      mLPAStar->computeShortestPath(mTensorProductGraph);
+        mLPAStar->computeShortestPath(mTensorProductGraph);
     // Shortest path was all in collision.
     if (shortestPath.size() == 0)
       break;
@@ -660,23 +580,18 @@ ompl::base::PlannerStatus NNFrechet::solve(
     bool collisionFree = true;
     // NOTE: We check the current node and the next one, so stop one node
     // early on the path.
-    for (int i = 0; i < nnPath.size() - 1; i++)
-    {
+    for (int i = 0; i < nnPath.size() - 1; i++) {
       Vertex curVertex = nnPath[i];
       Vertex nextVertex = nnPath[i + 1];
 
-      bool alreadyEvaluated = checkEdgeEvaluation(
-        curVertex,
-        nextVertex);
+      bool alreadyEvaluated = checkEdgeEvaluation(curVertex, nextVertex);
 
-      if (!alreadyEvaluated)
-      {
+      if (!alreadyEvaluated) {
         // TODO: Forward collision checking?
         bool inCollision = evaluateEdge(curVertex, nextVertex);
 
         // Edge is in collision. Path will not be used.
-        if (inCollision)
-        {
+        if (inCollision) {
           markEdgeInCollision(curVertex, nextVertex);
 
           collisionFree = false;
@@ -684,8 +599,7 @@ ompl::base::PlannerStatus NNFrechet::solve(
         }
       }
 
-      if (finalPath.size() == 0)
-      {
+      if (finalPath.size() == 0) {
         finalPath.push_back(curVertex);
         finalPath.push_back(nextVertex);
       } else {
@@ -694,8 +608,7 @@ ompl::base::PlannerStatus NNFrechet::solve(
     }
 
     // Fully valid path.
-    if (collisionFree)
-    {
+    if (collisionFree) {
       solutionFound = true;
       break;
     }
@@ -703,8 +616,7 @@ ompl::base::PlannerStatus NNFrechet::solve(
 
   mSearchTime = searchTimer.elapsed();
 
-  if(solutionFound)
-  {
+  if (solutionFound) {
     pdef_->addSolutionPath(constructSolution(finalPath));
 
     OMPL_INFORM("Solution Found!");
@@ -714,9 +626,11 @@ ompl::base::PlannerStatus NNFrechet::solve(
     OMPL_INFORM("Length of path:    %d", finalPath.size());
 
     OMPL_INFORM("Time to build NN Graph:    %f seconds", mBuildNNTime);
-    OMPL_INFORM("Time to build Tensor Product Graph:    %f seconds", mBuildTesnorTime);
+    OMPL_INFORM("Time to build Tensor Product Graph:    %f seconds",
+                mBuildTesnorTime);
 
-    OMPL_INFORM("Total time to init structures:    %f seconds", mInitStructuresTime);
+    OMPL_INFORM("Total time to init structures:    %f seconds",
+                mInitStructuresTime);
     OMPL_INFORM("Total time to search TPG:    %f seconds", mSearchTime);
 
     return ompl::base::PlannerStatus::EXACT_SOLUTION;
@@ -726,24 +640,22 @@ ompl::base::PlannerStatus NNFrechet::solve(
   }
 }
 
-ompl::base::PlannerStatus NNFrechet::solve(double solveTime)
-{
+ompl::base::PlannerStatus NNFrechet::solve(double solveTime) {
   return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
 }
 
-void NNFrechet::setup()
-{
+void NNFrechet::setup() {
   // Need to check that required fields are set.
   if (mReferencePath.size() == 0)
     throw ompl::Exception("Ref path not set!");
 
-  if (mFkFunc == NULL )
+  if (mFkFunc == NULL)
     throw ompl::Exception("FK function not set!");
 
-  if (mIkFunc == NULL )
+  if (mIkFunc == NULL)
     throw ompl::Exception("IK function not set!");
 
-  if (mDistanceFunc == NULL )
+  if (mDistanceFunc == NULL)
     throw ompl::Exception("Task-space distance function not set!");
 
   boost::timer initStructuresTimer;
@@ -767,6 +679,4 @@ void NNFrechet::setup()
 
   mInitStructuresTime = initStructuresTimer.elapsed();
 }
-
-
 }
