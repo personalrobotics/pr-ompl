@@ -104,13 +104,24 @@ class NNFrechet : public ompl::base::Planner {
   /// Total time spent on \c solve() (i.e. LazySP).
   double mSearchTime = 0;
 
+  /// LPA* object used to quickly rewire path in TPG after edge is marked in
+  /// collision. Searche for a minimum-bottleneck path on the TPG.
   std::shared_ptr<LPAStar> mLPAStar;
 
-  // Function pointers that are set externally for FK/IK.
+  /// NOTE: Function pointers that are set externally for FK, IK, and distance
+  /// in task-space.
+
+  /// FK function that returns the end-effector pose that a configuration
+  /// would induce.
   std::function<Eigen::Isometry3d(ompl::base::State *)> mFkFunc;
+
+  /// IK function that returns n inverse kinematics solutions for the given
+  /// waypoint in task-space.
   std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
       mIkFunc;
-  // Custom task space distance function used to calculate frechet distance.
+
+  /// Computes the distance between two poses in task-space. Used to compute
+  /// the Frechet error of a path in \c mNNGraph via the tensor-product graph.
   std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)> mDistanceFunc;
 
 public:
