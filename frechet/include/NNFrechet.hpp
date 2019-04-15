@@ -14,7 +14,7 @@
 
 namespace NNFrechet {
 
-/// The OMPL Planner class that implements the algorithm
+/// The OMPL Planner class that implements the NNF algorithm.
 class NNFrechet : public ompl::base::Planner {
   std::default_random_engine mRandomGenerator;
 

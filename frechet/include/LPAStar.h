@@ -24,8 +24,10 @@ class LPAStar {
 
   /// Distance map (see LPA* paper).
   std::unordered_map<Vertex, double> mDistance;
+
   /// Lookahead distance map (see LPA* paper).
   std::unordered_map<Vertex, double> mDistanceLookahead;
+
   /// Predecessor map (see LPA* paper).
   std::unordered_map<Vertex, Vertex> mPrev;
 
@@ -114,7 +116,6 @@ public:
   /// Helper method for the above. Follows predecessor map to recover the
   /// shortest path.
   std::vector<Vertex> followBackpointers();
-
 }; // class LPAStar
 
 #endif // LPA_STAR_
