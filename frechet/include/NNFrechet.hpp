@@ -257,12 +257,32 @@ public:
   /// \c mReferenceGraph and \c mNNGraph.
   void buildTensorProductGraph();
 
-  /// Extract the corresponding NN Graph path from a path in the TPG.
+  /// NOTE: Helpers related to LazySP and graph search.
+
+  /// Extract the corresponding path in \c mNNGraph from a path in
+  /// \c mTensorProductGraph.
+  ///
+  /// \param[in] tensorProductPath Found path on \c mTensorProductGraph.
   std::vector<Vertex> extractNNPath(std::vector<Vertex> &tensorProductPath);
-  // Check if lazy SP has already evaluated an NN Graph edge.
+
+  /// Check if lazySP has already evaluated an edge in \c mNNGraph.
+  ///
+  /// \param[in] source Source of edge to check in /c mNNGraph.
+  /// \param[in] target Target of edge to check in /c mNNGraph.
   bool checkEdgeEvaluation(Vertex &source, Vertex &target);
-  // Core collision check.
+
+  /// Collision-check an edge of \c mNNGraph.
+  ///
+  /// \param[in] source Source of edge to check in /c mNNGraph.
+  /// \param[in] target Target of edge to check in /c mNNGraph.
   bool evaluateEdge(Vertex &source, Vertex &target);
+
+  /// Mark an edge of \c mNNGraph as being in collision. Also sets all
+  /// *corresponding* nodes of \c mTensorProductGraph to have infinite weight,
+  /// and update \c mLPAStar accordingly.
+  ///
+  /// \param[in] nnU Source of edge to mark in /c mNNGraph.
+  /// \param[in] nnV Target of edge to mark in /c mNNGraph.
   void markEdgeInCollision(Vertex &nnU, Vertex &nnV);
 
   // OMPL required methods
