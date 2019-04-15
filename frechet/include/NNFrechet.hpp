@@ -206,22 +206,58 @@ public:
   void setRandomSeed(int seed);
 
   /// NOTE: Graph construction methods.
+
+  /// Builds \c mReferenceGraph from \c mReferencePath.
   void buildReferenceGraph();
 
+  /// Sample \c numSolutions IK solutions using \c mIkFunc for the point
+  /// \c curWaypoint and add the corresponding nodes to \mNNGraph.
+  ///
+  /// \param[in] curWaypoint Task-space point to sample IK for.
+  /// \param[in] numSolutions Number of solutions to sample.
   std::vector<Vertex> sampleIKNodes(Eigen::Isometry3d &curWaypoint,
                                     int numSolutions);
+
+  /// Unifromly sample \c numSamples IK solutions for points on
+  /// \c mReferencePath using \c sampleIKNodes.
+  ///
+  /// \param[in] numSamples Number of solutions to sample.
   std::vector<std::vector<Vertex>> sampleNNGraphNodes(int numSamples);
+
+  /// Add sub-sampled edge between two nodes in /c mNNGraph.
+  ///
+  /// \param[in] firstNNVertex Edge source in /c mNNGraph.
+  /// \param[in] secondNNVertex Edge target in /c mNNGraph.
   void addSubsampledEdge(Vertex &firstNNVertex, Vertex &secondNNVertex);
+
+  /// Use the above helpers to sample \c mNNGraph from \c mReferencePath.
   void buildNNGraph();
 
+  /// Initialize node of \c mTensorProductGraph.
+  ///
+  /// \param[in] refNodes Passed nodes of \c mReferenceGraph.
+  /// \param[in] nnNodes Passed nodes of \c mNNGraph.
   void addTensorProductNodes(std::vector<Vertex> &refNodes,
                              std::vector<Vertex> &nnNodes);
+
+  /// Add edge between two nodes of \c mTensorProductGraph.
+  ///
+  /// \param[in] v1 Edge source in /c mTensorProductGraph.
+  /// \param[in] v2 Edge target in /c mTensorProductGraph.
   void addTensorProductEdge(Vertex &v1, Vertex &v2);
+
+  /// Initialize edges of \c mTensorProductGraph.
+  ///
+  /// \param[in] refNodes Passed nodes of \c mReferenceGraph.
+  /// \param[in] nnNodes Passed nodes of \c mNNGraph.
   void connectTensorProductNodes(std::vector<Vertex> &refNodes,
                                  std::vector<Vertex> &nnNodes);
+
+  /// Use the above helpers to build \c mTensorProductGraph out of
+  /// \c mReferenceGraph and \c mNNGraph.
   void buildTensorProductGraph();
 
-  // Extract the corresponding NN Graph path from a path in the TPG.
+  /// Extract the corresponding NN Graph path from a path in the TPG.
   std::vector<Vertex> extractNNPath(std::vector<Vertex> &tensorProductPath);
   // Check if lazy SP has already evaluated an NN Graph edge.
   bool checkEdgeEvaluation(Vertex &source, Vertex &target);
