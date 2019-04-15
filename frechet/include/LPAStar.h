@@ -37,6 +37,8 @@ class LPAStar
   std::unordered_map< Vertex, Vertex > mPrev;
 
   public:
+    LPAStar(){}
+
     // For marking collision edges.
     double mInfVal = std::numeric_limits<double>::max();
 

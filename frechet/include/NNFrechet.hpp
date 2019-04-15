@@ -74,8 +74,7 @@ namespace NNFrechet {
     // Total time on solve() (lazySP).
     double mSearchTime = 0;
 
-
-    LPAStar mLPAStar;
+    std::shared_ptr<LPAStar> mLPAStar;
 
     // Function pointers that are set externally for FK/IK.
     std::function<Eigen::Isometry3d(ompl::base::State*)> mFkFunc;

@@ -602,15 +602,15 @@ void NNFrechet::markEdgeInCollision(Vertex& nnU, Vertex& nnV)
   std::vector<Edge>& mappedTPGEdges = mNNToTPGEdges[nnEdgeString];
 
   for (const auto& curEdge : mappedTPGEdges)
-    edgeLengthMap[curEdge] = mLPAStar.mInfVal;
+    edgeLengthMap[curEdge] = mLPAStar->mInfVal;
 
   for (const auto& updateEdge : mappedTPGEdges)
   {
     Vertex tensorU = source(updateEdge, mTensorProductGraph);
     Vertex tensorV = target(updateEdge, mTensorProductGraph);
 
-    if (mLPAStar.updatePredecessor(mTensorProductGraph, tensorU, tensorV))
-      mLPAStar.updateVertex(mTensorProductGraph, tensorV);
+    if (mLPAStar->updatePredecessor(mTensorProductGraph, tensorU, tensorV))
+      mLPAStar->updateVertex(mTensorProductGraph, tensorV);
   }
 }
 
@@ -652,7 +652,7 @@ ompl::base::PlannerStatus NNFrechet::solve(
     finalPath.clear();
 
     std::vector<Vertex> shortestPath =
-      mLPAStar.computeShortestPath(mTensorProductGraph);
+      mLPAStar->computeShortestPath(mTensorProductGraph);
     // Shortest path was all in collision.
     if (shortestPath.size() == 0)
       break;
@@ -763,7 +763,8 @@ void NNFrechet::setup()
 
   std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
 
-  mLPAStar.initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
+  mLPAStar = std::make_shared<LPAStar>();
+  mLPAStar->initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
   std::cout << "[INFO]: LPA* structure initialized." << std::endl;
 
   mInitStructuresTime = initStructuresTimer.elapsed();
