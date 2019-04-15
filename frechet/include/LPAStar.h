@@ -23,71 +23,107 @@ using namespace pr_bgl;
 
 typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 
-/// A class for *bottleneck* LPA*. NOTE that the graph must be a DAG for this
+/// A class for *bottleneck* LPA*. NOTE that the graph *must* be a DAG for this
 /// code to produce valid results.
 class LPAStar {
+  /// Min-heap that backs the priority queue.
   heap_indexed<double> mPQ;
 
+  /// Start and target nodes of the search.
   Vertex mStartNode;
   Vertex mGoalNode;
 
+  /// Distance map (see LPA* paper).
   std::unordered_map<Vertex, double> mDistance;
+  /// Lookahead distance map (see LPA* paper).
   std::unordered_map<Vertex, double> mDistanceLookahead;
+  /// Predecessor map (see LPA* paper).
   std::unordered_map<Vertex, Vertex> mPrev;
 
 public:
   LPAStar() {}
 
-  // For marking collision edges.
+  // NOTE: Methods related to PQ operations.
+
+  /// Infinity value for marking collision edges.
   double mInfVal = std::numeric_limits<double>::max();
 
+  /// Get the LPA* distance of a node.
+  /// \param[in] v Node to get the distance of.
   double getDistance(Vertex &v);
 
+  /// Get the LPA* lookahead distance of a node.
+  /// \param[in] v Node to get the lookahead distance of.
   double getDistanceLookahead(Vertex &v);
 
+  /// Update the priority of a node already on the PQ.
+  /// \param[in] g Graph the node belongs to.
+  /// \param[in] v Node to update the priority of.
+  /// \param[in] newPriority New priority of the node.
   void updatePQ(Graph &g, Vertex &v, double newPriority);
 
+  /// Insert a new node into the priority queue with given priority.
+  /// \param[in] g Graph the node belongs to.
+  /// \param[in] v Node to insert into the PQ.
+  /// \param[in] priority Priority of the node.
   void insertPQ(Graph &g, Vertex &v, double priority);
 
+  /// Delete a node from the priority queue.
+  /// \param[in] g Graph the node belongs to.
+  /// \param[in] v Node to delete from the PQ.
   void removePQ(Graph &g, Vertex &v);
 
+  /// Check if the priority queue contains a given node.
+  /// \param[in] g Graph the node belongs to.
+  /// \param[in] v Node to check for in PQ.
   bool containsPQ(Graph &g, Vertex &v);
 
+  /// Return true if the priority queue contains no nodes.
   bool isEmptyPQ();
 
-  // Get the samllest priority in the queue.
+  /// Get the samllest priority value in the queue.
   double peekPQ();
 
-  // We use a min heap, so this should be the Vertex with the smallest
-  // priority.
+  /// Remove and return the node with the smallest priority in the PQ.
+  /// \param[in] g Graph the search is on.
   Vertex popPQ(Graph &g);
 
-  // NOTE: Actual LPA* methods.
+  // NOTE: Core LPA* methods.
 
-  // Set up the data structures with original nodes and edges.
+  /// Set up the core LPA* data structures.
+  /// \param[in] g Graph the search is on.
+  /// \param[in] start Start node of the search.
+  /// \param[in] goal Target node of the search.
   void initLPA(Graph &g, Vertex &start, Vertex &goal);
 
-  // Get key of a node.
+  /// Compute the LPA* priority of a node.
+  /// \param[in] node Node to compute LPA* priority of.
   double calculateKey(Vertex &node);
 
-  // This must be called called when u's dist and/or lookahead dist
-  // (and therefore consistency) may have been changed
-  // this ensures u is in the queue correctly
+  /// This must be called called when u's dist and/or lookahead dist
+  /// (and therefore consistency) may have been changed
+  /// this ensures u is in the queue correctly
+  /// \param[in] g Graph u belongs to.
+  /// \param[in] u Node that must be updated.
   void updateVertex(Graph &g, Vertex &u);
 
-  // This is called to update vertex v due to either:
-  // - u_dist being updated OR
-  // - uv_weight being updated
-  // it will recalculate v's lookahead distance
-  // and return whether v's lookahead distance changed
-  // (if predecessor changed, but lookahead value didnt, return false)
+  /// This is called to update vertex v due to either:
+  /// - u_dist being updated OR
+  /// - uv_weight being updated
+  /// it will recalculate v's lookahead distance
+  /// and return whether v's lookahead distance changed
+  /// (if predecessor changed, but lookahead value didnt, return false)
+  /// \param[in] g Graph u and v belong to.
+  /// \param[in] u Predecessor of v that was updated.
+  /// \param[in] v Node that may need to be updated.
   bool updatePredecessor(Graph &g, Vertex &u, Vertex &v);
 
-  // Return shortest path.
+  /// Return shortest path on graph.
+  /// \param[in] g Graph the search is on.
   std::vector<Vertex> computeShortestPath(Graph &g);
 
-  // Helper method for the above. Follows prev map to recover the shortest
-  // path.
+  /// Helper method for the above. Follows predecessor map to recover the
+  /// shortest path.
   std::vector<Vertex> followBackpointers();
 
 }; // class LPAStar
