@@ -402,7 +402,7 @@ void NNFrechet::addTensorProductNodes(
     }
   }
 
-  std::cout << "[INFO]: TPG has " << numTPGNodes << " nodes." << std::endl;
+  OMPL_INFORM("TPG has %d nodes.", numTPGNodes);
 }
 
 void NNFrechet::addTensorProductEdge(
@@ -500,12 +500,10 @@ void NNFrechet::connectTensorProductNodes(
 void NNFrechet::buildTensorProductGraph()
 {
   std::vector<Vertex> refNodes = getGraphVertices(mReferenceGraph);
-  std::vector<Vertex> nnNodes = getGraphVertices(mNNGraph);
+  OMPL_INFORM("Ref Graph  has %d nodes.", refNodes.size());
 
-  std::cout << "[INFO]: Ref Graph has " << refNodes.size() << " nodes."
-    << std::endl;
-  std::cout << "[INFO]: NN Graph has " << nnNodes.size() << " nodes."
-    << std::endl;
+  std::vector<Vertex> nnNodes = getGraphVertices(mNNGraph);
+  OMPL_INFORM("NN Graph has %d nodes.", nnNodes.size());
 
   // Set up the tensor product graph with the correct nodes.
   addTensorProductNodes(refNodes, nnNodes);
@@ -761,11 +759,11 @@ void NNFrechet::setup()
   buildTensorProductGraph();
   mBuildTesnorTime = buildTensorTimer.elapsed();
 
-  std::cout << "[INFO]: Tensor Product Graph has been built." << std::endl;
+  OMPL_INFORM("Tensor Product Graph has been built.");
 
   mLPAStar = std::make_shared<LPAStar>();
   mLPAStar->initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
-  std::cout << "[INFO]: LPA* structure initialized." << std::endl;
+  OMPL_INFORM("LPA* structure initialized.");
 
   mInitStructuresTime = initStructuresTimer.elapsed();
 }
