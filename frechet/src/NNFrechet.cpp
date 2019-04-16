@@ -1,13 +1,3 @@
-#include <algorithm>     // std::reverse
-#include <assert.h>      // Debug
-#include <chrono>        // record rewireTime
-#include <cmath>         // pow, sqrt
-#include <fstream>       // Write to file
-#include <iostream>      // std::cerr
-#include <queue>         // std::priority_queue
-#include <set>           // std::set
-#include <unordered_set> // std::unordered_set
-
 #include <boost/timer.hpp>
 
 #include "NNFrechet.hpp"

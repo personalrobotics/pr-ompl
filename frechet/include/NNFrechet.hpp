@@ -1,12 +1,8 @@
 #ifndef NN_FRECHET_HPP_
 #define NN_FRECHET_HPP_
 
-#include <exception>
-#include <iostream>
-#include <queue>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "LPAStar.h"
