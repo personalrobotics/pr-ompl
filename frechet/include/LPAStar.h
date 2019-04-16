@@ -30,13 +30,7 @@ class LPAStar {
   /// Predecessor map (see LPA* paper).
   std::unordered_map<Vertex, Vertex> mPrev;
 
-public:
-  LPAStar() {}
-
   // NOTE: Methods related to PQ operations.
-
-  /// Infinity value for marking collision edges.
-  double mInfVal = std::numeric_limits<double>::max();
 
   /// Get the LPA* distance of a node.
   ///
@@ -85,6 +79,23 @@ public:
   /// \param[in] g Graph the search is on.
   Vertex popPQ(Graph &g);
 
+  // NOTE: Helpers used during search.
+
+  /// Compute the LPA* priority of a node.
+  ///
+  /// \param[in] node Node to compute LPA* priority of.
+  double calculateKey(Vertex &node);
+
+  /// Helper method for the above. Follows predecessor map to recover the
+  /// shortest path.
+  std::vector<Vertex> followBackpointers();
+
+public:
+  LPAStar() {}
+
+  /// Infinity value for marking collision edges.
+  double mInfVal = std::numeric_limits<double>::max();
+
   // NOTE: Core LPA* methods.
 
   /// Set up the core LPA* data structures.
@@ -93,11 +104,6 @@ public:
   /// \param[in] start Start node of the search.
   /// \param[in] goal Target node of the search.
   void initLPA(Graph &g, Vertex &start, Vertex &goal);
-
-  /// Compute the LPA* priority of a node.
-  ///
-  /// \param[in] node Node to compute LPA* priority of.
-  double calculateKey(Vertex &node);
 
   /// This must be called when u's dist and/or lookahead dist (and therefore
   /// consistency) may have been changed. This ensures u is in the queue
@@ -123,10 +129,6 @@ public:
   ///
   /// \param[in] g Graph the search is on.
   std::vector<Vertex> computeShortestPath(Graph &g);
-
-  /// Helper method for the above. Follows predecessor map to recover the
-  /// shortest path.
-  std::vector<Vertex> followBackpointers();
 }; // class LPAStar
 
 #endif // LPA_STAR_

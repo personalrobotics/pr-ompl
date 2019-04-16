@@ -37,6 +37,30 @@ Vertex LPAStar::popPQ(Graph &g) {
   return top_vertex;
 }
 
+double LPAStar::calculateKey(Vertex &node) {
+  return std::min(getDistance(node), getDistanceLookahead(node));
+}
+
+std::vector<Vertex> LPAStar::followBackpointers() {
+  // Check if we actually reached the goal vertex. If we didn't, fail and
+  // cry (by returning an empty vector).
+  if (getDistance(mGoalNode) == mInfVal)
+    return std::vector<Vertex>();
+
+  std::vector<Vertex> finalPath;
+  finalPath.push_back(mGoalNode);
+  Vertex curBack = mPrev[mGoalNode];
+
+  while (curBack != mStartNode) {
+    finalPath.push_back(curBack);
+    curBack = mPrev[curBack];
+  }
+  finalPath.push_back(mStartNode);
+
+  std::reverse(finalPath.begin(), finalPath.end());
+  return finalPath;
+}
+
 void LPAStar::initLPA(Graph &g, Vertex &start, Vertex &goal) {
   mStartNode = start;
   mGoalNode = goal;
@@ -49,10 +73,6 @@ void LPAStar::initLPA(Graph &g, Vertex &start, Vertex &goal) {
 
   mDistanceLookahead[mStartNode] = 0.0;
   insertPQ(g, mStartNode, 0.0);
-}
-
-double LPAStar::calculateKey(Vertex &node) {
-  return std::min(getDistance(node), getDistanceLookahead(node));
 }
 
 void LPAStar::updateVertex(Graph &g, Vertex &u) {
@@ -197,24 +217,4 @@ std::vector<Vertex> LPAStar::computeShortestPath(Graph &g) {
 
   // Actual path.
   return followBackpointers();
-}
-
-std::vector<Vertex> LPAStar::followBackpointers() {
-  // Check if we actually reached the goal vertex. If we didn't, fail and
-  // cry (by returning an empty vector).
-  if (getDistance(mGoalNode) == mInfVal)
-    return std::vector<Vertex>();
-
-  std::vector<Vertex> finalPath;
-  finalPath.push_back(mGoalNode);
-  Vertex curBack = mPrev[mGoalNode];
-
-  while (curBack != mStartNode) {
-    finalPath.push_back(curBack);
-    curBack = mPrev[curBack];
-  }
-  finalPath.push_back(mStartNode);
-
-  std::reverse(finalPath.begin(), finalPath.end());
-  return finalPath;
 }
