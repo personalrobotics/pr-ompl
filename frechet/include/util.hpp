@@ -4,18 +4,8 @@
 #include <Eigen/Dense>
 
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/graph/reverse_graph.hpp>
-#include <boost/program_options.hpp>
 
 #include <ompl/base/Planner.h>
-#include <ompl/base/ScopedState.h>
-#include <ompl/base/StateSpace.h>
-#include <ompl/base/goals/GoalState.h>
-#include <ompl/base/spaces/RealVectorStateSpace.h>
-#include <ompl/datastructures/NearestNeighbors.h>
-#include <ompl/datastructures/NearestNeighborsGNAT.h>
-#include <ompl/geometric/PathGeometric.h>
 
 /// Boost Graph definitions.
 struct VProp {

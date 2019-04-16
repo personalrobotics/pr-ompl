@@ -7,7 +7,6 @@
 #include "heap_indexed.h"
 #include "util.hpp"
 
-namespace po = boost::program_options;
 using namespace pr_bgl;
 
 typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;

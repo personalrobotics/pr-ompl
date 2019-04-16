@@ -1,5 +1,7 @@
 #include <boost/timer.hpp>
 
+#include <ompl/geometric/PathGeometric.h>
+
 #include "NNFrechet.hpp"
 
 namespace NNFrechet {
