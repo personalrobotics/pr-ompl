@@ -124,7 +124,7 @@ class NNFrechet : public ompl::base::Planner {
   /// to return out.
   ///
   /// \param[in] nnPath Found path on \c mNNGraph.
-  ompl::base::PathPtr constructSolution(std::vector<Vertex> &nnPath);
+  ompl::base::PathPtr convertSolutionOMPL(std::vector<Vertex> &nnPath);
 
   /// Helper that takes given reference path and super-sample according to
   /// \c mNumWaypoints and \c mDiscretization.
@@ -217,7 +217,7 @@ public:
   /// Construct the NNF planner with default params.
   ///
   /// \param[in] si OMPL state-space struct.
-  NNFrechet(const ompl::base::SpaceInformationPtr &si);
+  explicit NNFrechet(const ompl::base::SpaceInformationPtr &si);
 
   /// Construct the NNF planner with custom params.
   ///

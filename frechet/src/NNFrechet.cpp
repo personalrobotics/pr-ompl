@@ -6,7 +6,8 @@
 
 namespace NNFrechet {
 
-ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex> &nnPath) {
+ompl::base::PathPtr
+NNFrechet::convertSolutionOMPL(std::vector<Vertex> &nnPath) {
   ompl::geometric::PathGeometric *pathOut =
       new ompl::geometric::PathGeometric(si_);
 
@@ -608,7 +609,7 @@ NNFrechet::solve(const ompl::base::PlannerTerminationCondition &ptc) {
   mSearchTime = searchTimer.elapsed();
 
   if (solutionFound) {
-    pdef_->addSolutionPath(constructSolution(finalPath));
+    pdef_->addSolutionPath(convertSolutionOMPL(finalPath));
 
     OMPL_INFORM("Solution Found!");
 

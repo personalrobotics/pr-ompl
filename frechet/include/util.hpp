@@ -9,7 +9,7 @@
 
 /// Boost Graph definitions.
 struct VProp {
-  // To identify TPG nodes.
+  // Name of this node. Mainly used to identify TPG nodes.
   std::string name;
 
   // Robot configuration.
@@ -18,13 +18,14 @@ struct VProp {
   // End-effector pose.
   Eigen::Isometry3d poseEE;
 
-  // For figuring weight of TPG nodes.
+  // The "weight" of a tensor-product node. Used to compute the minimum Frechet
+  // path. Please see the papers linked from the README.
   double frechet;
 
-  // For recovering the final motion plan.
+  // Only set for a tensor-product node, and represents the node's NN Graph
+  // component. Used to recover the final motion plan.
   // HACK: Assumes Vertex to be unsigned long int.
   unsigned long int nnComponent;
-
 }; // struct VProp
 
 struct EProp {
