@@ -120,86 +120,18 @@ class NNFrechet : public ompl::base::Planner {
   /// the Frechet error of a path in \c mNNGraph via the tensor-product graph.
   std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)> mDistanceFunc;
 
-public:
-  /// Construct the NNF planner with default params.
+  /// Helper that converts a Boost graph path on \c mNNGraph into an OMPL path
+  /// to return out.
   ///
-  /// \param[in] si OMPL state-space struct.
-  NNFrechet(const ompl::base::SpaceInformationPtr &si);
+  /// \param[in] nnPath Found path on \c mNNGraph.
+  ompl::base::PathPtr constructSolution(std::vector<Vertex> &nnPath);
 
-  /// Construct the NNF planner with custom params.
-  ///
-  /// \param[in] si OMPL state-space struct.
-  /// \param[in] numWaypoints Sets \c mNumWaypoints.
-  /// \param[in] ikMultiplier Sets \c mIKMultiplier.
-  /// \param[in] numNN Sets \c mNumNN.
-  /// \param[in] discretization Sets \c mDiscretization.
-  /// \param[in] seed Set random seed for \c mRandomGenerator.
-  NNFrechet(const ompl::base::SpaceInformationPtr &si, int numWaypoints,
-            int ikMultiplier, int numNN, int discretization, int seed = 1);
-
-  /// Take given reference path and super-sample according to \c mNumWaypoints
-  /// and \c mDiscretization.
+  /// Helper that takes given reference path and super-sample according to
+  /// \c mNumWaypoints and \c mDiscretization.
   ///
   /// \param[in] referencePath Input reference path.
   std::vector<Eigen::Isometry3d>
   subsampleRefPath(std::vector<Eigen::Isometry3d> &referencePath);
-
-  /// NOTE: Setters and getter that *must* be used before \c setup() is called.
-
-  /// Sets the reference path to follow with end-effector.
-  ///
-  /// \param[in] referencePath Input reference path.
-  void setRefPath(std::vector<Eigen::Isometry3d> &referencePath);
-
-  /// Sets the function used to compute forward kinematics, and thus edge
-  /// weights of \c mTensorProductGraph.
-  ///
-  /// \param[in] fkFunc Set FK function.
-  void setFKFunc(std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc);
-
-  /// Sets the function used to compute inverse kinematics, and thus sample
-  /// nodes of \c mNNGraph.
-  ///
-  /// \param[in] ikFunc Set IK function.
-  void setIKFunc(
-      std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
-          ikFunc);
-
-  /// Sets the function used to compute distance between two poses in
-  /// task-space, and thus the edge weights of \c mTensorProductGraph.
-  ///
-  /// \param[in] distanceFunc Set task-space distance function.
-  void setDistanceFunc(
-      std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
-          distanceFunc);
-
-  /// NOTE: Setters that caller is not required to use, but that can be used to
-  /// alter NNF params before setup() constructs the three graphs.
-
-  /// Set \c mNumWaypoints before \c setup().
-  ///
-  /// \param[in] numWaypoints Sets \c mNumWaypoints.
-  void setNumWaypoints(int numWaypoints);
-
-  /// Set \c mIKMultiplier before \c setup().
-  ///
-  /// \param[in] ikMultiplier Sets \c mIKMultiplier.
-  void setIKMultiplier(int ikMultiplier);
-
-  /// Set \c mNumNN before \c setup().
-  ///
-  /// \param[in] numNN Sets \c mNumNN.
-  void setNumNN(int numNN);
-
-  /// Set \c mDiscretization before \c setup().
-  ///
-  /// \param[in] discretization Sets \c mDiscretization.
-  void setDiscretization(int discretization);
-
-  /// Sets random seed for \c mRandomGenerator before \c setup().
-  ///
-  /// \param[in] seed Sets random seed for \c mRandomGenerator.
-  void setRandomSeed(int seed);
 
   /// NOTE: Graph construction methods.
 
@@ -281,6 +213,80 @@ public:
   /// \param[in] nnV Target of edge to mark in /c mNNGraph.
   void markEdgeInCollision(Vertex &nnU, Vertex &nnV);
 
+public:
+  /// Construct the NNF planner with default params.
+  ///
+  /// \param[in] si OMPL state-space struct.
+  NNFrechet(const ompl::base::SpaceInformationPtr &si);
+
+  /// Construct the NNF planner with custom params.
+  ///
+  /// \param[in] si OMPL state-space struct.
+  /// \param[in] numWaypoints Sets \c mNumWaypoints.
+  /// \param[in] ikMultiplier Sets \c mIKMultiplier.
+  /// \param[in] numNN Sets \c mNumNN.
+  /// \param[in] discretization Sets \c mDiscretization.
+  /// \param[in] seed Set random seed for \c mRandomGenerator.
+  NNFrechet(const ompl::base::SpaceInformationPtr &si, int numWaypoints,
+            int ikMultiplier, int numNN, int discretization, int seed = 1);
+
+  /// NOTE: Setters and getter that *must* be used before \c setup() is called.
+
+  /// Sets the reference path to follow with end-effector.
+  ///
+  /// \param[in] referencePath Input reference path.
+  void setRefPath(std::vector<Eigen::Isometry3d> &referencePath);
+
+  /// Sets the function used to compute forward kinematics, and thus edge
+  /// weights of \c mTensorProductGraph.
+  ///
+  /// \param[in] fkFunc Set FK function.
+  void setFKFunc(std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc);
+
+  /// Sets the function used to compute inverse kinematics, and thus sample
+  /// nodes of \c mNNGraph.
+  ///
+  /// \param[in] ikFunc Set IK function.
+  void setIKFunc(
+      std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
+          ikFunc);
+
+  /// Sets the function used to compute distance between two poses in
+  /// task-space, and thus the edge weights of \c mTensorProductGraph.
+  ///
+  /// \param[in] distanceFunc Set task-space distance function.
+  void setDistanceFunc(
+      std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
+          distanceFunc);
+
+  /// NOTE: Setters that caller is not required to use, but that can be used to
+  /// alter NNF params before setup() constructs the three graphs.
+
+  /// Set \c mNumWaypoints before \c setup().
+  ///
+  /// \param[in] numWaypoints Sets \c mNumWaypoints.
+  void setNumWaypoints(int numWaypoints);
+
+  /// Set \c mIKMultiplier before \c setup().
+  ///
+  /// \param[in] ikMultiplier Sets \c mIKMultiplier.
+  void setIKMultiplier(int ikMultiplier);
+
+  /// Set \c mNumNN before \c setup().
+  ///
+  /// \param[in] numNN Sets \c mNumNN.
+  void setNumNN(int numNN);
+
+  /// Set \c mDiscretization before \c setup().
+  ///
+  /// \param[in] discretization Sets \c mDiscretization.
+  void setDiscretization(int discretization);
+
+  /// Sets random seed for \c mRandomGenerator before \c setup().
+  ///
+  /// \param[in] seed Sets random seed for \c mRandomGenerator.
+  void setRandomSeed(int seed);
+
   /// NOTE: OMPL required methods.
 
   /// Mark an edge of \c mNNGraph as being in collision. Also sets all
@@ -290,12 +296,6 @@ public:
   /// \param[in] nnU Source of edge to mark in /c mNNGraph.
   /// \param[in] nnV Target of edge to mark in /c mNNGraph.
   void setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef);
-
-  /// Helper that converts a Boost graph path on \c mNNGraph into an OMPL path
-  /// to return out.
-  ///
-  /// \param[in] nnPath Found path on \c mNNGraph.
-  ompl::base::PathPtr constructSolution(std::vector<Vertex> &nnPath);
 
   /// Use LazySP to search for a collision free path that minimizes Frechet.
   ///

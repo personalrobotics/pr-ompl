@@ -6,20 +6,15 @@
 
 namespace NNFrechet {
 
-NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
-    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
-      mNumWaypoints(5), mIKMultiplier(5), mNumNN(5), mDiscretization(3) {
-  // TODO: How should default params be set?
-  mRandomGenerator.seed(1);
-}
+ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex> &nnPath) {
+  ompl::geometric::PathGeometric *pathOut =
+      new ompl::geometric::PathGeometric(si_);
 
-NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
-                     int numWaypoints, int ikMultiplier, int numNN,
-                     int discretization, int seed)
-    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
-      mNumWaypoints(numWaypoints), mIKMultiplier(ikMultiplier), mNumNN(numNN),
-      mDiscretization(discretization) {
-  mRandomGenerator.seed(seed);
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+  for (Vertex curNode : nnPath)
+    pathOut->append(stateMap[curNode]);
+
+  return ompl::base::PathPtr(pathOut);
 }
 
 std::vector<Eigen::Isometry3d>
@@ -37,44 +32,6 @@ NNFrechet::subsampleRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
 
   return subSampled;
 }
-
-void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
-  // Don't use the entire reference path. Subsample it.
-  mReferencePath = subsampleRefPath(referencePath);
-}
-
-void NNFrechet::setFKFunc(
-    std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
-  mFkFunc = fkFunc;
-}
-
-void NNFrechet::setIKFunc(
-    std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
-        ikFunc) {
-  mIkFunc = ikFunc;
-}
-
-void NNFrechet::setDistanceFunc(
-    std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
-        distanceFunc) {
-  mDistanceFunc = distanceFunc;
-}
-
-void NNFrechet::setNumWaypoints(int numWaypoints) {
-  mNumWaypoints = numWaypoints;
-}
-
-void NNFrechet::setIKMultiplier(int ikMultiplier) {
-  mIKMultiplier = ikMultiplier;
-}
-
-void NNFrechet::setNumNN(int numNN) { mNumNN = numNN; }
-
-void NNFrechet::setDiscretization(int discretization) {
-  mDiscretization = discretization;
-}
-
-void NNFrechet::setRandomSeed(int seed) { mRandomGenerator.seed(seed); }
 
 void NNFrechet::buildReferenceGraph() {
   VPNameMap nameMap = get(&VProp::name, mReferenceGraph);
@@ -526,7 +483,60 @@ void NNFrechet::markEdgeInCollision(Vertex &nnU, Vertex &nnV) {
   }
 }
 
-// OMPL Methods
+NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
+      mNumWaypoints(5), mIKMultiplier(5), mNumNN(5), mDiscretization(3) {
+  // TODO: How should default params be set?
+  mRandomGenerator.seed(1);
+}
+
+NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
+                     int numWaypoints, int ikMultiplier, int numNN,
+                     int discretization, int seed)
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
+      mNumWaypoints(numWaypoints), mIKMultiplier(ikMultiplier), mNumNN(numNN),
+      mDiscretization(discretization) {
+  mRandomGenerator.seed(seed);
+}
+
+void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
+  // Don't use the entire reference path. Subsample it.
+  mReferencePath = subsampleRefPath(referencePath);
+}
+
+void NNFrechet::setFKFunc(
+    std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
+  mFkFunc = fkFunc;
+}
+
+void NNFrechet::setIKFunc(
+    std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
+        ikFunc) {
+  mIkFunc = ikFunc;
+}
+
+void NNFrechet::setDistanceFunc(
+    std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
+        distanceFunc) {
+  mDistanceFunc = distanceFunc;
+}
+
+void NNFrechet::setNumWaypoints(int numWaypoints) {
+  mNumWaypoints = numWaypoints;
+}
+
+void NNFrechet::setIKMultiplier(int ikMultiplier) {
+  mIKMultiplier = ikMultiplier;
+}
+
+void NNFrechet::setNumNN(int numNN) { mNumNN = numNN; }
+
+void NNFrechet::setDiscretization(int discretization) {
+  mDiscretization = discretization;
+}
+
+void NNFrechet::setRandomSeed(int seed) { mRandomGenerator.seed(seed); }
+
 void NNFrechet::setProblemDefinition(
     const ompl::base::ProblemDefinitionPtr &pdef) {
   ompl::base::Planner::setProblemDefinition(pdef);
@@ -534,17 +544,6 @@ void NNFrechet::setProblemDefinition(
   // NOTE: I don't think anything is needed here, since start/goal aren't really
   // required for this planner.
   // TODO: Maybe just start?
-}
-
-ompl::base::PathPtr NNFrechet::constructSolution(std::vector<Vertex> &nnPath) {
-  ompl::geometric::PathGeometric *pathOut =
-      new ompl::geometric::PathGeometric(si_);
-
-  VPStateMap stateMap = get(&VProp::state, mNNGraph);
-  for (Vertex curNode : nnPath)
-    pathOut->append(stateMap[curNode]);
-
-  return ompl::base::PathPtr(pathOut);
 }
 
 ompl::base::PlannerStatus
