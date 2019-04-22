@@ -1,9 +1,9 @@
 #include "LPAStar.h"
 
-double LPAStar::getDistance(Vertex &v) { return mDistance[v]; }
+double LPAStar::getDistance(Vertex &v) { return mDistanceMap[v]; }
 
 double LPAStar::getDistanceLookahead(Vertex &v) {
-  return mDistanceLookahead[v];
+  return mDistanceLookaheadMap[v];
 }
 
 void LPAStar::updatePQ(Graph &g, Vertex &v, double newPriority) {
@@ -49,11 +49,11 @@ std::vector<Vertex> LPAStar::followBackpointers() {
 
   std::vector<Vertex> finalPath;
   finalPath.push_back(mGoalNode);
-  Vertex curBack = mPrev[mGoalNode];
+  Vertex curBack = mPrevMap[mGoalNode];
 
   while (curBack != mStartNode) {
     finalPath.push_back(curBack);
-    curBack = mPrev[curBack];
+    curBack = mPrevMap[curBack];
   }
   finalPath.push_back(mStartNode);
 
@@ -67,11 +67,11 @@ void LPAStar::initLPA(Graph &g, Vertex &start, Vertex &goal) {
 
   std::vector<Vertex> initNodes = getGraphVertices(g);
   for (auto &vertex : initNodes) {
-    mDistance[vertex] = mInfVal;
-    mDistanceLookahead[vertex] = mInfVal;
+    mDistanceMap[vertex] = mInfVal;
+    mDistanceLookaheadMap[vertex] = mInfVal;
   }
 
-  mDistanceLookahead[mStartNode] = 0.0;
+  mDistanceLookaheadMap[mStartNode] = 0.0;
   insertPQ(g, mStartNode, 0.0);
 }
 
@@ -94,13 +94,13 @@ void LPAStar::updateVertex(Graph &g, Vertex &u) {
     }
 
     if (lookaheadValues.size() == 0) {
-      mDistanceLookahead[u] = mInfVal;
+      mDistanceLookaheadMap[u] = mInfVal;
     } else {
       std::vector<double>::iterator it = std::min_element(
           std::begin(lookaheadValues), std::end(lookaheadValues));
 
       double minLookahead = *it;
-      mDistanceLookahead[u] = minLookahead;
+      mDistanceLookaheadMap[u] = minLookahead;
     }
   }
 
@@ -117,8 +117,8 @@ bool LPAStar::updatePredecessor(Graph &g, Vertex &u, Vertex &v) {
     return false;
 
   bool u_relied_on = false;
-  if (mPrev.count(v)) {
-    Vertex v_pred = mPrev[v];
+  if (mPrevMap.count(v)) {
+    Vertex v_pred = mPrevMap[v];
     u_relied_on = v_pred == u;
   }
 
@@ -139,7 +139,7 @@ bool LPAStar::updatePredecessor(Graph &g, Vertex &u, Vertex &v) {
     if (v_look_u == v_look_old) {
       return false;
     } else if (v_look_u < v_look_old) {
-      mDistanceLookahead[v] = v_look_u;
+      mDistanceLookaheadMap[v] = v_look_u;
       return true;
     } else // dist through u increased
     {
@@ -160,12 +160,12 @@ bool LPAStar::updatePredecessor(Graph &g, Vertex &u, Vertex &v) {
       }
 
       if (v_look_best != mInfVal)
-        mPrev[v] = v_pred_best;
+        mPrevMap[v] = v_pred_best;
 
       if (v_look_best == v_look_old) {
         return false;
       } else {
-        mDistanceLookahead[v] = v_look_best;
+        mDistanceLookaheadMap[v] = v_look_best;
         return true;
       }
     }
@@ -173,8 +173,8 @@ bool LPAStar::updatePredecessor(Graph &g, Vertex &u, Vertex &v) {
   {
     if (v_look_u < v_look_old) // dist through u is better
     {
-      mPrev[v] = u;
-      mDistanceLookahead[v] = v_look_u;
+      mPrevMap[v] = u;
+      mDistanceLookaheadMap[v] = v_look_u;
       return true;
     } else // u is not better
     {
@@ -196,7 +196,7 @@ std::vector<Vertex> LPAStar::computeShortestPath(Graph &g) {
 
     if (getDistance(u) > getDistanceLookahead(u)) {
       // Force it to be consistent.
-      mDistance[u] = getDistanceLookahead(u);
+      mDistanceMap[u] = getDistanceLookahead(u);
 
       std::vector<Vertex> neighbors = getNeighbors(u, g);
       for (auto successor : neighbors) {
@@ -204,7 +204,7 @@ std::vector<Vertex> LPAStar::computeShortestPath(Graph &g) {
           updateVertex(g, successor);
       }
     } else {
-      mDistance[u] = mInfVal;
+      mDistanceMap[u] = mInfVal;
       updateVertex(g, u);
 
       std::vector<Vertex> neighbors = getNeighbors(u, g);

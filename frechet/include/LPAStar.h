@@ -17,18 +17,18 @@ class LPAStar {
   /// Min-heap that backs the priority queue.
   heap_indexed<double> mPQ;
 
-  /// Start and target nodes of the search.
+  /// Start and goal nodes of the search.
   Vertex mStartNode;
   Vertex mGoalNode;
 
   /// Distance map (see LPA* paper).
-  std::unordered_map<Vertex, double> mDistance;
+  std::unordered_map<Vertex, double> mDistanceMap;
 
   /// Lookahead distance map (see LPA* paper).
-  std::unordered_map<Vertex, double> mDistanceLookahead;
+  std::unordered_map<Vertex, double> mDistanceLookaheadMap;
 
   /// Predecessor map (see LPA* paper).
-  std::unordered_map<Vertex, Vertex> mPrev;
+  std::unordered_map<Vertex, Vertex> mPrevMap;
 
   // NOTE: Methods related to PQ operations.
 
