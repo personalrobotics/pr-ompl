@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "heap_indexed.h"
+#include "MinPriorityQueue.h"
 #include "util.hpp"
 
 using namespace pr_bgl;
@@ -14,8 +14,8 @@ typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 /// A class for *bottleneck* LPA*. NOTE that the graph *must* be a DAG for this
 /// code to produce valid results.
 class LPAStar {
-  /// Min-heap that backs the priority queue.
-  heap_indexed<double> mPQ;
+  /// Our fringe data structure.
+  MinPriorityQueue mPQ;
 
   /// Start and goal nodes of the search.
   Vertex mStartNode;
@@ -41,43 +41,6 @@ class LPAStar {
   ///
   /// \param[in] v Node to get the lookahead distance of.
   double getDistanceLookahead(Vertex &v);
-
-  /// Update the priority of a node already on the PQ.
-  ///
-  /// \param[in] g Graph the node belongs to.
-  /// \param[in] v Node to update the priority of.
-  /// \param[in] newPriority New priority of the node.
-  void updatePQ(Graph &g, Vertex &v, double newPriority);
-
-  /// Insert a new node into the priority queue with given priority.
-  ///
-  /// \param[in] g Graph the node belongs to.
-  /// \param[in] v Node to insert into the PQ.
-  /// \param[in] priority Priority of the node.
-  void insertPQ(Graph &g, Vertex &v, double priority);
-
-  /// Delete a node from the priority queue.
-  ///
-  /// \param[in] g Graph the node belongs to.
-  /// \param[in] v Node to delete from the PQ.
-  void removePQ(Graph &g, Vertex &v);
-
-  /// Check if the priority queue contains a given node.
-  ///
-  /// \param[in] g Graph the node belongs to.
-  /// \param[in] v Node to check for in PQ.
-  bool containsPQ(Graph &g, Vertex &v);
-
-  /// Return true if the priority queue contains no nodes.
-  bool isEmptyPQ();
-
-  /// Get the smallest priority value in the queue.
-  double peekPQ();
-
-  /// Remove and return the node with the smallest priority in the PQ.
-  ///
-  /// \param[in] g Graph the search is on.
-  Vertex popPQ(Graph &g);
 
   // NOTE: Helpers used during search.
 

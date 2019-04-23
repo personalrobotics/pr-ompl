@@ -6,37 +6,6 @@ double LPAStar::getDistanceLookahead(Vertex &v) {
   return mDistanceLookaheadMap[v];
 }
 
-void LPAStar::updatePQ(Graph &g, Vertex &v, double newPriority) {
-  IndexMap index_map = get(boost::vertex_index, g);
-  mPQ.update(index_map[v], newPriority);
-}
-
-void LPAStar::insertPQ(Graph &g, Vertex &v, double priority) {
-  IndexMap index_map = get(boost::vertex_index, g);
-  mPQ.insert(index_map[v], priority);
-}
-
-void LPAStar::removePQ(Graph &g, Vertex &v) {
-  IndexMap index_map = get(boost::vertex_index, g);
-  mPQ.remove(index_map[v]);
-}
-
-bool LPAStar::containsPQ(Graph &g, Vertex &v) {
-  IndexMap index_map = get(boost::vertex_index, g);
-  return mPQ.contains(index_map[v]);
-}
-
-bool LPAStar::isEmptyPQ() { return (mPQ.size() == 0); }
-
-double LPAStar::peekPQ() { return mPQ.top_key(); }
-
-Vertex LPAStar::popPQ(Graph &g) {
-  Vertex top_vertex = vertex(mPQ.top_idx(), g);
-
-  mPQ.remove_min();
-  return top_vertex;
-}
-
 double LPAStar::calculateKey(Vertex &node) {
   return std::min(getDistance(node), getDistanceLookahead(node));
 }
@@ -72,7 +41,7 @@ void LPAStar::initLPA(Graph &g, Vertex &start, Vertex &goal) {
   }
 
   mDistanceLookaheadMap[mStartNode] = 0.0;
-  insertPQ(g, mStartNode, 0.0);
+  mPQ.insert(g, mStartNode, 0.0);
 }
 
 void LPAStar::updateVertex(Graph &g, Vertex &u) {
@@ -104,11 +73,11 @@ void LPAStar::updateVertex(Graph &g, Vertex &u) {
     }
   }
 
-  if (containsPQ(g, u))
-    removePQ(g, u);
+  if (mPQ.contains(g, u))
+    mPQ.remove(g, u);
 
   if (getDistance(u) != getDistanceLookahead(u))
-    insertPQ(g, u, calculateKey(u));
+    mPQ.insert(g, u, calculateKey(u));
 }
 
 bool LPAStar::updatePredecessor(Graph &g, Vertex &u, Vertex &v) {
@@ -188,11 +157,11 @@ std::vector<Vertex> LPAStar::computeShortestPath(Graph &g) {
   // goal since we are doing bottleneck search. Otherwise, nothing will get
   // popped from the PQ after an edge change and update, causing nothing in the
   // prev map to get rewired.
-  while (!isEmptyPQ() &&
-         (peekPQ() <= calculateKey(mGoalNode) ||
+  while (!mPQ.isEmpty() &&
+         (mPQ.peek() <= calculateKey(mGoalNode) ||
           getDistanceLookahead(mGoalNode) != getDistance(mGoalNode))) {
-    double curCost = peekPQ();
-    Vertex u = popPQ(g);
+    double curCost = mPQ.peek();
+    Vertex u = mPQ.pop(g);
 
     if (getDistance(u) > getDistanceLookahead(u)) {
       // Force it to be consistent.

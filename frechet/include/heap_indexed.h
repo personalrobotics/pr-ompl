@@ -10,6 +10,8 @@
 #include <vector>
  */
 
+#include "util.hpp"
+
 namespace pr_bgl {
 
 /*! \brief Binary min-heap with index lookups.
