@@ -485,8 +485,7 @@ void NNFrechet::markEdgeInCollision(Vertex &nnU, Vertex &nnV) {
 }
 
 NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
-    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
-      mNumWaypoints(5), mIKMultiplier(5), mNumNN(5), mDiscretization(3) {
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()) {
   // TODO: How should default params be set?
   mRandomGenerator.seed(1);
 }

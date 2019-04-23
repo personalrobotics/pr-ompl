@@ -69,18 +69,18 @@ class NNFrechet : public ompl::base::Planner {
 
   /// How many task-space waypoints to super-sample from the given reference
   /// path.
-  int mNumWaypoints;
+  int mNumWaypoints = 5;
 
   /// Multiplied by \c mNumWaypoints to get the IK budget for building
   /// \c mNNGraph.
-  int mIKMultiplier;
+  int mIKMultiplier = 5;
 
   /// How many nearest-neighbors to connect to in \c mNNGraph.
-  int mNumNN;
+  int mNumNN = 5;
 
   /// How finely edges in \c mNNGraph should be sub-sampled to increase accuracy
   /// of Frechet computation.
-  int mDiscretization;
+  int mDiscretization = 3;
 
   /// Default resolution to collision-check in C-space.
   double mCheckResolution = 0.05;
