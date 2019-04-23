@@ -28,6 +28,7 @@ link_libraries(
 
 add_library(${PROJECT_NAME}
   src/util.cpp
+  src/MinPriorityQueue
   src/LPAStar.cpp
   src/NNFrechet.cpp
 )
