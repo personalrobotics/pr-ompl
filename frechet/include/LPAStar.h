@@ -35,23 +35,23 @@ class LPAStar {
   /// Get the LPA* distance of a node.
   ///
   /// \param[in] v Node to get the distance of.
-  double getDistance(Vertex &v);
+  const double getDistance(Vertex &v);
 
   /// Get the LPA* lookahead distance of a node.
   ///
   /// \param[in] v Node to get the lookahead distance of.
-  double getDistanceLookahead(Vertex &v);
+  const double getDistanceLookahead(Vertex &v);
 
   // NOTE: Helpers used during search.
 
   /// Compute the LPA* priority of a node.
   ///
   /// \param[in] node Node to compute LPA* priority of.
-  double calculateKey(Vertex &node);
+  const double calculateKey(Vertex &node);
 
   /// Helper method for the above. Follows predecessor map to recover the
   /// shortest path.
-  std::vector<Vertex> followBackpointers();
+  const std::vector<Vertex> followBackpointers();
 
 public:
   LPAStar() {}

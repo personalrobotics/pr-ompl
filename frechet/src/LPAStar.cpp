@@ -1,16 +1,16 @@
 #include "LPAStar.h"
 
-double LPAStar::getDistance(Vertex &v) { return mDistanceMap[v]; }
+const double LPAStar::getDistance(Vertex &v) { return mDistanceMap[v]; }
 
-double LPAStar::getDistanceLookahead(Vertex &v) {
+const double LPAStar::getDistanceLookahead(Vertex &v) {
   return mDistanceLookaheadMap[v];
 }
 
-double LPAStar::calculateKey(Vertex &node) {
+const double LPAStar::calculateKey(Vertex &node) {
   return std::min(getDistance(node), getDistanceLookahead(node));
 }
 
-std::vector<Vertex> LPAStar::followBackpointers() {
+const std::vector<Vertex> LPAStar::followBackpointers() {
   // Check if we actually reached the goal vertex. If we didn't, fail and
   // cry (by returning an empty vector).
   if (getDistance(mGoalNode) == mInfVal)
