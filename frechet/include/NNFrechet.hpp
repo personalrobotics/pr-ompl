@@ -12,7 +12,7 @@ namespace NNFrechet {
 
 /// The OMPL Planner class that implements the NNF algorithm.
 class NNFrechet : public ompl::base::Planner {
-  /// Used to sample random points on the reference path to IK.
+  /// RNG used to sample random points on the reference path to IK.
   std::default_random_engine mRandomGenerator;
 
   /// The pointer to the OMPL state space.
@@ -25,8 +25,8 @@ class NNFrechet : public ompl::base::Planner {
   /// task-space points on the reference path.
   Graph mNNGraph;
 
-  /// Tensor-product graph between the above two graphs. Used to compute the
-  /// minimum-Frechet path on the NN Graph.
+  /// Tensor-product graph (TPG) between the above two graphs. Used to compute
+  // the minimum-Frechet path on the NN Graph.
   Graph mTensorProductGraph;
 
   /// Map of TPG node's name -> TPG node.
