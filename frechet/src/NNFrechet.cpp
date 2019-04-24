@@ -6,6 +6,220 @@
 
 namespace NNFrechet {
 
+NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()) {
+  mRandomGenerator.seed(1);
+}
+
+NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
+                     int numWaypoints, int ikMultiplier, int numNN,
+                     int discretization, int seed)
+    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
+      mNumWaypoints(numWaypoints), mIKMultiplier(ikMultiplier), mNumNN(numNN),
+      mDiscretization(discretization) {
+  mRandomGenerator.seed(seed);
+}
+
+void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
+  if (referencePath.size() <= 1)
+    throw ompl::Exception("referencePath is empty!");
+
+  mReferencePath = referencePath;
+}
+
+void NNFrechet::setFKFunc(
+    std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
+  if (!fkFunc)
+    throw ompl::Exception("Passed FK function is NULL!");
+
+  mFkFunc = fkFunc;
+}
+
+void NNFrechet::setIKFunc(
+    std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
+        ikFunc) {
+  if (!ikFunc)
+    throw ompl::Exception("Passed IK function is NULL!");
+
+  mIkFunc = ikFunc;
+}
+
+void NNFrechet::setDistanceFunc(
+    std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
+        distanceFunc) {
+  if (!distanceFunc)
+    throw ompl::Exception("Passed task-space distance function is NULL!");
+
+  mDistanceFunc = distanceFunc;
+}
+
+void NNFrechet::setNumWaypoints(int numWaypoints) {
+  if (numWaypoints <= 0)
+    throw ompl::Exception("numWaypoints must be positive!");
+
+  mNumWaypoints = numWaypoints;
+}
+
+void NNFrechet::setIKMultiplier(int ikMultiplier) {
+  if (ikMultiplier <= 0)
+    throw ompl::Exception("ikMultiplier must be positive!");
+
+  mIKMultiplier = ikMultiplier;
+}
+
+void NNFrechet::setNumNN(int numNN) {
+  if (numNN <= 0)
+    throw ompl::Exception("numNN must be positive!");
+
+  mNumNN = numNN;
+}
+
+void NNFrechet::setDiscretization(int discretization) {
+  if (discretization <= 0)
+    throw ompl::Exception("discretization must be positive!");
+
+  mDiscretization = discretization;
+}
+
+void NNFrechet::setRandomSeed(int seed) { mRandomGenerator.seed(seed); }
+
+void NNFrechet::setProblemDefinition(
+    const ompl::base::ProblemDefinitionPtr &pdef) {
+  ompl::base::Planner::setProblemDefinition(pdef);
+
+  // NOTE: I don't think anything is needed here, since start/goal aren't really
+  // required for this planner.
+  // TODO: Maybe just start?
+}
+
+ompl::base::PlannerStatus
+NNFrechet::solve(const ompl::base::PlannerTerminationCondition &ptc) {
+  boost::timer searchTimer;
+
+  VPStateMap stateMap = get(&VProp::state, mNNGraph);
+
+  std::vector<Vertex> finalPath;
+  bool solutionFound = false;
+
+  // Lazy SP style. Just keep searching until you find a collision free
+  // path that works, all in collision, or ptc violated.
+  while (ptc == false) {
+    finalPath.clear();
+
+    std::vector<Vertex> shortestPath =
+        mLPAStar->computeShortestPath(mTensorProductGraph);
+    // Shortest path was all in collision.
+    if (shortestPath.size() == 0)
+      break;
+
+    std::vector<Vertex> nnPath = extractNNPath(shortestPath);
+
+    bool collisionFree = true;
+    // NOTE: We check the current node and the next one, so stop one node
+    // early on the path.
+    for (int i = 0; i < nnPath.size() - 1; i++) {
+      Vertex curVertex = nnPath[i];
+      Vertex nextVertex = nnPath[i + 1];
+
+      bool alreadyEvaluated = checkEdgeEvaluation(curVertex, nextVertex);
+
+      if (!alreadyEvaluated) {
+        // TODO: Forward collision checking?
+        bool inCollision = evaluateEdge(curVertex, nextVertex);
+
+        // Edge is in collision. Path will not be used.
+        if (inCollision) {
+          markEdgeInCollision(curVertex, nextVertex);
+
+          collisionFree = false;
+          break;
+        }
+      }
+
+      if (finalPath.size() == 0) {
+        finalPath.push_back(curVertex);
+        finalPath.push_back(nextVertex);
+      } else {
+        finalPath.push_back(nextVertex);
+      }
+    }
+
+    // Fully valid path.
+    if (collisionFree) {
+      solutionFound = true;
+      break;
+    }
+  }
+
+  mSearchTime = searchTimer.elapsed();
+
+  if (solutionFound) {
+    pdef_->addSolutionPath(convertSolutionOMPL(finalPath));
+
+    OMPL_INFORM("Solution Found!");
+
+    // Planning stats.
+    OMPL_INFORM("Final Frechet Error:    %f", mFinalError);
+    OMPL_INFORM("Length of path:    %d", finalPath.size());
+
+    OMPL_INFORM("Time to build NN Graph:    %f seconds", mBuildNNTime);
+    OMPL_INFORM("Time to build Tensor Product Graph:    %f seconds",
+                mBuildTesnorTime);
+
+    OMPL_INFORM("Total time to init structures:    %f seconds",
+                mInitStructuresTime);
+    OMPL_INFORM("Total time to search TPG:    %f seconds", mSearchTime);
+
+    return ompl::base::PlannerStatus::EXACT_SOLUTION;
+  } else {
+    OMPL_INFORM("Solution NOT Found");
+    return ompl::base::PlannerStatus::TIMEOUT;
+  }
+}
+
+ompl::base::PlannerStatus NNFrechet::solve(double solveTime) {
+  return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
+}
+
+void NNFrechet::setup() {
+  // Need to check that required fields are set.
+  if (mReferencePath.size() == 0)
+    throw ompl::Exception("Ref path not set!");
+
+  if (mFkFunc == NULL)
+    throw ompl::Exception("FK function not set!");
+
+  if (mIkFunc == NULL)
+    throw ompl::Exception("IK function not set!");
+
+  if (mDistanceFunc == NULL)
+    throw ompl::Exception("Task-space distance function not set!");
+
+  boost::timer initStructuresTimer;
+
+  // Don't use the entire reference path. Subsample it.
+  mReferencePath = subsampleRefPath(mReferencePath);
+
+  // Build all three graphs.
+  buildReferenceGraph();
+
+  boost::timer buildNNTimer;
+  buildNNGraph();
+  mBuildNNTime = buildNNTimer.elapsed();
+
+  boost::timer buildTensorTimer;
+  buildTensorProductGraph();
+  mBuildTesnorTime = buildTensorTimer.elapsed();
+
+  OMPL_INFORM("Tensor Product Graph has been built.");
+
+  mLPAStar = std::make_shared<LPAStar>();
+  mLPAStar->initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
+  OMPL_INFORM("LPA* structure initialized.");
+
+  mInitStructuresTime = initStructuresTimer.elapsed();
+}
+
 ompl::base::PathPtr
 NNFrechet::convertSolutionOMPL(std::vector<Vertex> &nnPath) {
   ompl::geometric::PathGeometric *pathOut =
@@ -485,219 +699,5 @@ void NNFrechet::markEdgeInCollision(Vertex &nnU, Vertex &nnV) {
     if (mLPAStar->updatePredecessor(mTensorProductGraph, tensorU, tensorV))
       mLPAStar->updateVertex(mTensorProductGraph, tensorV);
   }
-}
-
-NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
-    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()) {
-  mRandomGenerator.seed(1);
-}
-
-NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
-                     int numWaypoints, int ikMultiplier, int numNN,
-                     int discretization, int seed)
-    : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()),
-      mNumWaypoints(numWaypoints), mIKMultiplier(ikMultiplier), mNumNN(numNN),
-      mDiscretization(discretization) {
-  mRandomGenerator.seed(seed);
-}
-
-void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
-  if (referencePath.size() <= 1)
-    throw ompl::Exception("referencePath is empty!");
-
-  mReferencePath = referencePath;
-}
-
-void NNFrechet::setFKFunc(
-    std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
-  if (!fkFunc)
-    throw ompl::Exception("Passed FK function is NULL!");
-
-  mFkFunc = fkFunc;
-}
-
-void NNFrechet::setIKFunc(
-    std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
-        ikFunc) {
-  if (!ikFunc)
-    throw ompl::Exception("Passed IK function is NULL!");
-
-  mIkFunc = ikFunc;
-}
-
-void NNFrechet::setDistanceFunc(
-    std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
-        distanceFunc) {
-  if (!distanceFunc)
-    throw ompl::Exception("Passed task-space distance function is NULL!");
-
-  mDistanceFunc = distanceFunc;
-}
-
-void NNFrechet::setNumWaypoints(int numWaypoints) {
-  if (numWaypoints <= 0)
-    throw ompl::Exception("numWaypoints must be positive!");
-
-  mNumWaypoints = numWaypoints;
-}
-
-void NNFrechet::setIKMultiplier(int ikMultiplier) {
-  if (ikMultiplier <= 0)
-    throw ompl::Exception("ikMultiplier must be positive!");
-
-  mIKMultiplier = ikMultiplier;
-}
-
-void NNFrechet::setNumNN(int numNN) {
-  if (numNN <= 0)
-    throw ompl::Exception("numNN must be positive!");
-
-  mNumNN = numNN;
-}
-
-void NNFrechet::setDiscretization(int discretization) {
-  if (discretization <= 0)
-    throw ompl::Exception("discretization must be positive!");
-
-  mDiscretization = discretization;
-}
-
-void NNFrechet::setRandomSeed(int seed) { mRandomGenerator.seed(seed); }
-
-void NNFrechet::setProblemDefinition(
-    const ompl::base::ProblemDefinitionPtr &pdef) {
-  ompl::base::Planner::setProblemDefinition(pdef);
-
-  // NOTE: I don't think anything is needed here, since start/goal aren't really
-  // required for this planner.
-  // TODO: Maybe just start?
-}
-
-ompl::base::PlannerStatus
-NNFrechet::solve(const ompl::base::PlannerTerminationCondition &ptc) {
-  boost::timer searchTimer;
-
-  VPStateMap stateMap = get(&VProp::state, mNNGraph);
-
-  std::vector<Vertex> finalPath;
-  bool solutionFound = false;
-
-  // Lazy SP style. Just keep searching until you find a collision free
-  // path that works, all in collision, or ptc violated.
-  while (ptc == false) {
-    finalPath.clear();
-
-    std::vector<Vertex> shortestPath =
-        mLPAStar->computeShortestPath(mTensorProductGraph);
-    // Shortest path was all in collision.
-    if (shortestPath.size() == 0)
-      break;
-
-    std::vector<Vertex> nnPath = extractNNPath(shortestPath);
-
-    bool collisionFree = true;
-    // NOTE: We check the current node and the next one, so stop one node
-    // early on the path.
-    for (int i = 0; i < nnPath.size() - 1; i++) {
-      Vertex curVertex = nnPath[i];
-      Vertex nextVertex = nnPath[i + 1];
-
-      bool alreadyEvaluated = checkEdgeEvaluation(curVertex, nextVertex);
-
-      if (!alreadyEvaluated) {
-        // TODO: Forward collision checking?
-        bool inCollision = evaluateEdge(curVertex, nextVertex);
-
-        // Edge is in collision. Path will not be used.
-        if (inCollision) {
-          markEdgeInCollision(curVertex, nextVertex);
-
-          collisionFree = false;
-          break;
-        }
-      }
-
-      if (finalPath.size() == 0) {
-        finalPath.push_back(curVertex);
-        finalPath.push_back(nextVertex);
-      } else {
-        finalPath.push_back(nextVertex);
-      }
-    }
-
-    // Fully valid path.
-    if (collisionFree) {
-      solutionFound = true;
-      break;
-    }
-  }
-
-  mSearchTime = searchTimer.elapsed();
-
-  if (solutionFound) {
-    pdef_->addSolutionPath(convertSolutionOMPL(finalPath));
-
-    OMPL_INFORM("Solution Found!");
-
-    // Planning stats.
-    OMPL_INFORM("Final Frechet Error:    %f", mFinalError);
-    OMPL_INFORM("Length of path:    %d", finalPath.size());
-
-    OMPL_INFORM("Time to build NN Graph:    %f seconds", mBuildNNTime);
-    OMPL_INFORM("Time to build Tensor Product Graph:    %f seconds",
-                mBuildTesnorTime);
-
-    OMPL_INFORM("Total time to init structures:    %f seconds",
-                mInitStructuresTime);
-    OMPL_INFORM("Total time to search TPG:    %f seconds", mSearchTime);
-
-    return ompl::base::PlannerStatus::EXACT_SOLUTION;
-  } else {
-    OMPL_INFORM("Solution NOT Found");
-    return ompl::base::PlannerStatus::TIMEOUT;
-  }
-}
-
-ompl::base::PlannerStatus NNFrechet::solve(double solveTime) {
-  return solve(ompl::base::timedPlannerTerminationCondition(solveTime));
-}
-
-void NNFrechet::setup() {
-  // Need to check that required fields are set.
-  if (mReferencePath.size() == 0)
-    throw ompl::Exception("Ref path not set!");
-
-  if (mFkFunc == NULL)
-    throw ompl::Exception("FK function not set!");
-
-  if (mIkFunc == NULL)
-    throw ompl::Exception("IK function not set!");
-
-  if (mDistanceFunc == NULL)
-    throw ompl::Exception("Task-space distance function not set!");
-
-  boost::timer initStructuresTimer;
-
-  // Don't use the entire reference path. Subsample it.
-  mReferencePath = subsampleRefPath(mReferencePath);
-
-  // Build all three graphs.
-  buildReferenceGraph();
-
-  boost::timer buildNNTimer;
-  buildNNGraph();
-  mBuildNNTime = buildNNTimer.elapsed();
-
-  boost::timer buildTensorTimer;
-  buildTensorProductGraph();
-  mBuildTesnorTime = buildTensorTimer.elapsed();
-
-  OMPL_INFORM("Tensor Product Graph has been built.");
-
-  mLPAStar = std::make_shared<LPAStar>();
-  mLPAStar->initLPA(mTensorProductGraph, mTensorStartNode, mTensorGoalNode);
-  OMPL_INFORM("LPA* structure initialized.");
-
-  mInitStructuresTime = initStructuresTimer.elapsed();
 }
 }

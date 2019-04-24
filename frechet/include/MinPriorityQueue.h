@@ -12,6 +12,7 @@ typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 class MinPriorityQueue {
 
 public:
+  /// Constructor.
   MinPriorityQueue() {}
 
   /// Update the priority of a node already on the PQ.
