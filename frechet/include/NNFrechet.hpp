@@ -2,7 +2,6 @@
 #define NN_FRECHET_HPP_
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "LPAStar.h"
