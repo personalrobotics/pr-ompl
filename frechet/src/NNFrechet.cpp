@@ -21,6 +21,9 @@ NNFrechet::convertSolutionOMPL(std::vector<Vertex> &nnPath) {
 std::vector<Eigen::Isometry3d>
 NNFrechet::subsampleRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
   int numPts = ((mNumWaypoints - 1) * (mDiscretization + 1)) + 1;
+  if (numPts > referencePath.size())
+    throw ompl::Exception("Can't subsample ref path!");
+
   std::vector<int> sampledIDs =
       linIntSpace(0, referencePath.size() - 1, numPts);
 
@@ -506,32 +509,55 @@ void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
 
 void NNFrechet::setFKFunc(
     std::function<Eigen::Isometry3d(ompl::base::State *)> fkFunc) {
+  if (!fkFunc)
+    throw ompl::Exception("Passed FK function is NULL!");
+
   mFkFunc = fkFunc;
 }
 
 void NNFrechet::setIKFunc(
     std::function<std::vector<ompl::base::State *>(Eigen::Isometry3d &, int)>
         ikFunc) {
+  if (!ikFunc)
+    throw ompl::Exception("Passed IK function is NULL!");
+
   mIkFunc = ikFunc;
 }
 
 void NNFrechet::setDistanceFunc(
     std::function<double(Eigen::Isometry3d &, Eigen::Isometry3d &)>
         distanceFunc) {
+  if (!distanceFunc)
+    throw ompl::Exception("Passed task-space distance function is NULL!");
+
   mDistanceFunc = distanceFunc;
 }
 
 void NNFrechet::setNumWaypoints(int numWaypoints) {
+  if (numWaypoints <= 0)
+    throw ompl::Exception("numWaypoints must be positive!");
+
   mNumWaypoints = numWaypoints;
 }
 
 void NNFrechet::setIKMultiplier(int ikMultiplier) {
+  if (ikMultiplier <= 0)
+    throw ompl::Exception("ikMultiplier must be positive!");
+
   mIKMultiplier = ikMultiplier;
 }
 
-void NNFrechet::setNumNN(int numNN) { mNumNN = numNN; }
+void NNFrechet::setNumNN(int numNN) {
+  if (numNN <= 0)
+    throw ompl::Exception("numNN must be positive!");
+
+  mNumNN = numNN;
+}
 
 void NNFrechet::setDiscretization(int discretization) {
+  if (discretization <= 0)
+    throw ompl::Exception("discretization must be positive!");
+
   mDiscretization = discretization;
 }
 
