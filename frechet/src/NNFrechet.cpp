@@ -489,7 +489,6 @@ void NNFrechet::markEdgeInCollision(Vertex &nnU, Vertex &nnV) {
 
 NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si)
     : ompl::base::Planner(si, "NNFrechet"), mSpace(si->getStateSpace()) {
-  // TODO: How should default params be set?
   mRandomGenerator.seed(1);
 }
 
@@ -503,8 +502,10 @@ NNFrechet::NNFrechet(const ompl::base::SpaceInformationPtr &si,
 }
 
 void NNFrechet::setRefPath(std::vector<Eigen::Isometry3d> &referencePath) {
-  // Don't use the entire reference path. Subsample it.
-  mReferencePath = subsampleRefPath(referencePath);
+  if (referencePath.size() <= 1)
+    throw ompl::Exception("referencePath is empty!");
+
+  mReferencePath = referencePath;
 }
 
 void NNFrechet::setFKFunc(
@@ -676,6 +677,9 @@ void NNFrechet::setup() {
     throw ompl::Exception("Task-space distance function not set!");
 
   boost::timer initStructuresTimer;
+
+  // Don't use the entire reference path. Subsample it.
+  mReferencePath = subsampleRefPath(mReferencePath);
 
   // Build all three graphs.
   buildReferenceGraph();
