@@ -14,50 +14,10 @@ typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 /// A class for *bottleneck* LPA*. NOTE that the graph *must* be a DAG for this
 /// code to produce valid results.
 class LPAStar {
-  /// Our fringe data structure.
-  MinPriorityQueue mPQ;
-
-  /// Start and goal nodes of the search.
-  Vertex mStartNode;
-  Vertex mGoalNode;
-
-  /// Distance map (see LPA* paper).
-  std::unordered_map<Vertex, double> mDistanceMap;
-
-  /// Lookahead distance map (see LPA* paper).
-  std::unordered_map<Vertex, double> mDistanceLookaheadMap;
-
-  /// Predecessor map (see LPA* paper).
-  std::unordered_map<Vertex, Vertex> mPrevMap;
-
-  // NOTE: Methods related to PQ operations.
-
-  /// Get the LPA* distance of a node.
-  ///
-  /// \param[in] v Node to get the distance of.
-  const double getDistance(Vertex &v);
-
-  /// Get the LPA* lookahead distance of a node.
-  ///
-  /// \param[in] v Node to get the lookahead distance of.
-  const double getDistanceLookahead(Vertex &v);
-
-  // NOTE: Helpers used during search.
-
-  /// Compute the LPA* priority of a node.
-  ///
-  /// \param[in] node Node to compute LPA* priority of.
-  const double calculateKey(Vertex &v);
-
-  /// Helper method for the above. Follows predecessor map to recover the
-  /// shortest path.
-  const std::vector<Vertex> followBackpointers();
 
 public:
+  /// Constructor.
   LPAStar() {}
-
-  /// Infinity value for marking collision edges.
-  double mInfVal = std::numeric_limits<double>::max();
 
   // NOTE: Core LPA* methods.
 
@@ -92,6 +52,47 @@ public:
   ///
   /// \param[in] g Graph the search is on.
   std::vector<Vertex> computeShortestPath(Graph &g);
+
+  /// Infinity value for marking collision edges.
+  double mInfVal = std::numeric_limits<double>::max();
+
+private:
+  // NOTE: Helpers used during search.
+
+  /// Get the LPA* distance of a node.
+  ///
+  /// \param[in] v Node to get the distance of.
+  const double getDistance(Vertex &v);
+
+  /// Get the LPA* lookahead distance of a node.
+  ///
+  /// \param[in] v Node to get the lookahead distance of.
+  const double getDistanceLookahead(Vertex &v);
+
+  /// Compute the LPA* priority of a node.
+  ///
+  /// \param[in] node Node to compute LPA* priority of.
+  const double calculateKey(Vertex &v);
+
+  /// Helper method for the above. Follows predecessor map to recover the
+  /// shortest path.
+  const std::vector<Vertex> followBackpointers();
+
+  /// Our fringe data structure.
+  MinPriorityQueue mPQ;
+
+  /// Start and goal nodes of the search.
+  Vertex mStartNode;
+  Vertex mGoalNode;
+
+  /// Distance map (see LPA* paper).
+  std::unordered_map<Vertex, double> mDistanceMap;
+
+  /// Lookahead distance map (see LPA* paper).
+  std::unordered_map<Vertex, double> mDistanceLookaheadMap;
+
+  /// Predecessor map (see LPA* paper).
+  std::unordered_map<Vertex, Vertex> mPrevMap;
 }; // class LPAStar
 
 #endif // LPA_STAR_

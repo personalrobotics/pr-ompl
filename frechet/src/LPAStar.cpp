@@ -1,35 +1,5 @@
 #include "LPAStar.h"
 
-const double LPAStar::getDistance(Vertex &v) { return mDistanceMap[v]; }
-
-const double LPAStar::getDistanceLookahead(Vertex &v) {
-  return mDistanceLookaheadMap[v];
-}
-
-const double LPAStar::calculateKey(Vertex &v) {
-  return std::min(getDistance(v), getDistanceLookahead(v));
-}
-
-const std::vector<Vertex> LPAStar::followBackpointers() {
-  // Check if we actually reached the goal vertex. If we didn't, fail and
-  // cry (by returning an empty vector).
-  if (getDistance(mGoalNode) == mInfVal)
-    return std::vector<Vertex>();
-
-  std::vector<Vertex> finalPath;
-  finalPath.push_back(mGoalNode);
-  Vertex curBack = mPrevMap[mGoalNode];
-
-  while (curBack != mStartNode) {
-    finalPath.push_back(curBack);
-    curBack = mPrevMap[curBack];
-  }
-  finalPath.push_back(mStartNode);
-
-  std::reverse(finalPath.begin(), finalPath.end());
-  return finalPath;
-}
-
 void LPAStar::initLPA(Graph &g, Vertex &start, Vertex &goal) {
   mStartNode = start;
   mGoalNode = goal;
@@ -186,4 +156,34 @@ std::vector<Vertex> LPAStar::computeShortestPath(Graph &g) {
 
   // Actual path.
   return followBackpointers();
+}
+
+const double LPAStar::getDistance(Vertex &v) { return mDistanceMap[v]; }
+
+const double LPAStar::getDistanceLookahead(Vertex &v) {
+  return mDistanceLookaheadMap[v];
+}
+
+const double LPAStar::calculateKey(Vertex &v) {
+  return std::min(getDistance(v), getDistanceLookahead(v));
+}
+
+const std::vector<Vertex> LPAStar::followBackpointers() {
+  // Check if we actually reached the goal vertex. If we didn't, fail and
+  // cry (by returning an empty vector).
+  if (getDistance(mGoalNode) == mInfVal)
+    return std::vector<Vertex>();
+
+  std::vector<Vertex> finalPath;
+  finalPath.push_back(mGoalNode);
+  Vertex curBack = mPrevMap[mGoalNode];
+
+  while (curBack != mStartNode) {
+    finalPath.push_back(curBack);
+    curBack = mPrevMap[curBack];
+  }
+  finalPath.push_back(mStartNode);
+
+  std::reverse(finalPath.begin(), finalPath.end());
+  return finalPath;
 }
