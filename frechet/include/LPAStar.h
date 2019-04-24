@@ -47,7 +47,7 @@ class LPAStar {
   /// Compute the LPA* priority of a node.
   ///
   /// \param[in] node Node to compute LPA* priority of.
-  const double calculateKey(Vertex &node);
+  const double calculateKey(Vertex &v);
 
   /// Helper method for the above. Follows predecessor map to recover the
   /// shortest path.

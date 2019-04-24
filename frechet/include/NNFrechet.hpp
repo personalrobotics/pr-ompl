@@ -75,11 +75,12 @@ class NNFrechet : public ompl::base::Planner {
   /// \c mNNGraph.
   int mIKMultiplier = 5;
 
-  /// How many nearest-neighbors to connect to in \c mNNGraph.
+  /// Number of nearest-neighbors to connect to in \c mNNGraph.
   int mNumNN = 5;
 
-  /// How finely edges in \c mNNGraph should be sub-sampled to increase accuracy
-  /// of Frechet computation.
+  /// Controls how finely edges in \c mNNGraph should be sub-sampled to increase
+  /// accuracy of Frechet computation. Number of interpolated configurations
+  /// between any q_i and q_j.
   int mDiscretization = 3;
 
   /// Default resolution to collision-check in C-space.
@@ -289,12 +290,9 @@ public:
 
   /// NOTE: OMPL required methods.
 
-  /// Mark an edge of \c mNNGraph as being in collision. Also sets all
-  /// *corresponding* nodes of \c mTensorProductGraph to have infinite weight,
-  /// and update \c mLPAStar accordingly.
+  /// Set OMPL problem definition. Ignores start/goal states.
   ///
-  /// \param[in] nnU Source of edge to mark in /c mNNGraph.
-  /// \param[in] nnV Target of edge to mark in /c mNNGraph.
+  /// \param[in] pdef OMPL problem definition.
   void setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef);
 
   /// Use LazySP to search for a collision free path that minimizes Frechet.
@@ -313,5 +311,5 @@ public:
   void setup();
 };
 
-} // namespace LRAstar
+} // namespace NNFrechet
 #endif // NN_FRECHET_HPP_

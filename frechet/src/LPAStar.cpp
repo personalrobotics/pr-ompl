@@ -6,8 +6,8 @@ const double LPAStar::getDistanceLookahead(Vertex &v) {
   return mDistanceLookaheadMap[v];
 }
 
-const double LPAStar::calculateKey(Vertex &node) {
-  return std::min(getDistance(node), getDistanceLookahead(node));
+const double LPAStar::calculateKey(Vertex &v) {
+  return std::min(getDistance(v), getDistanceLookahead(v));
 }
 
 const std::vector<Vertex> LPAStar::followBackpointers() {
