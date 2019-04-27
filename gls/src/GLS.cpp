@@ -150,7 +150,7 @@ void GLS::setupPreliminaries()
     }
   }
 
-  // Additionally connect the source and target with a straight line to snap.
+  // Snap source to target.
   std::pair<Edge, bool> newEdge
       = boost::add_edge(mSourceVertex, mTargetVertex, mGraph);
   mGraph[newEdge.first].setLength(
@@ -219,11 +219,15 @@ void GLS::clear()
 }
 
 // ============================================================================
-ompl::base::PlannerStatus GLS::solve(
-    const ompl::base::PlannerTerminationCondition& /*ptc*/)
+ompl::base::PlannerStatus GLS::solve(double timeout) 
 {
-  // TODO (avk): Use ptc to terminate the search.
+  return solve(ompl::base::timedPlannerTerminationCondition(timeout));
+}
 
+// ============================================================================
+ompl::base::PlannerStatus GLS::solve(
+    const ompl::base::PlannerTerminationCondition& ptc)
+{
   // Return if source or target are in collision.
   if (evaluateVertex(mSourceVertex) == CollisionStatus::Collision)
   {
@@ -248,8 +252,12 @@ ompl::base::PlannerStatus GLS::solve(
   assert(currentSize - previousSize == 1);
 
   // Run in loop.
-  while (!mExtendQueue.isEmpty())
+  while (ptc == false)
   {
+    // If search has been exhausted, break and return failure.
+    if (mExtendQueue.isEmpty())
+      break;
+
     // Extend the tree till the event is triggered.
     extendSearchTree();
 

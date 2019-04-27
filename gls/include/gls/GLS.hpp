@@ -41,6 +41,10 @@ public:
   /// Destructor.
   ~GLS(void);
 
+  /// =======================================================
+  /// OMPL overrides.
+  /// =======================================================
+
   /// Setup the planner.
   void setup() override;
 
@@ -50,12 +54,20 @@ public:
   setProblemDefinition(const ompl::base::ProblemDefinitionPtr &pdef) override;
 
   /// Solve the planning problem.
+  /// \param[in] timoue Planning time available to GLS.
+  ompl::base::PlannerStatus solve(double timeout);
+
+  /// Solve the planning problem.
   /// \param[in] ptc OMPL Planning Termination Condition.
   ompl::base::PlannerStatus
   solve(const ompl::base::PlannerTerminationCondition &ptc);
 
   /// Clear the planner setup.
   void clear() override;
+
+  /// =======================================================
+  /// GLS setters and getters.
+  /// =======================================================
 
   /// Set the event to be used by GLS.
   /// \param[in] event Event that defines the trigger condition.
@@ -164,7 +176,7 @@ private:
   /// Boolean denoting if the graph has been setup.
   bool mGraphSetup{false};
 
-  /// Filename containing the roadmap.
+  /// Cost of the shortest path from source to target.
   double mBestPathCost{0};
 
   /// Flag to check if the planner succeeded.
