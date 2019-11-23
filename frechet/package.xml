@@ -8,6 +8,13 @@
   <maintainer email="sniyaz@cs.washington.edu">Sherdil Niyaz</maintainer>
   <author email="sniyaz@cs.washington.edu">Sherdil Niyaz</author>
   <license>BSD</license>
-  <buildtool_depend>catkin</buildtool_depend>
   <depend>ompl</depend>
+  <depend>eigen</depend>
+
+  <!-- This is required by REP-136. -->
+  <exec_depend>catkin</exec_depend>
+  <buildtool_depend>cmake</buildtool_depend>
+  <export>
+    <build_type>cmake</build_type>
+  </export>
 </package>

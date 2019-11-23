@@ -9,55 +9,54 @@ find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options s
 find_package(Eigen3 REQUIRED)
 
 include_directories(
-  include
+  include/${PROJECT_NAME}
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
-  ${Eigen3_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
-link_directories(
-  ${catkin_LIBRARY_DIRS}
-)
-
-link_libraries(
-  ${catkin_LIBRARIES}
-  ${OMPL_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-add_library(${PROJECT_NAME}
+add_library(pr-ompl-frechet SHARED
   src/util.cpp
   src/MinPriorityQueue
   src/LPAStar.cpp
   src/NNFrechet.cpp
 )
 
+target_include_directories(pr-ompl-frechet PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(pr-ompl-frechet
+  ${OMPL_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
 #================================================================================
 # Installation
 
-  install(TARGETS pr-ompl-frechet EXPORT pr-ompl-frechetConfig
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin)
+install(TARGETS pr-ompl-frechet EXPORT pr-ompl-frechetConfig
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+install(DIRECTORY include/ DESTINATION include)
 
-  install(DIRECTORY include/ DESTINATION include/pr-ompl-frechet)
+# This makes the project importable from the install directory
+install(EXPORT pr-ompl-frechetConfig DESTINATION share/pr-ompl-frechet/cmake)
 
-  # This makes the project importable from the install directory
-  install(EXPORT pr-ompl-frechetConfig DESTINATION share/pr-ompl-frechet/cmake)
+# This makes the project importable from the build directory
+export(TARGETS pr-ompl-frechet FILE pr-ompl-frechetConfig.cmake)
 
-  # This makes the project importable from the build directory
-  export(TARGETS pr-ompl-frechet FILE pr-ompl-frechetConfig.cmake)
-
-  # Install the package.xml file (to satisfy REP-136).
-  install(FILES "package.xml"
-    DESTINATION "share/pr-ompl-frechet")
+# Install the package.xml file (to satisfy REP-136).
+install(FILES "package.xml"
+  DESTINATION "share/pr-ompl-frechet")
 
 #================================================================================
 # Formatting
 #
 
-find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format-3.8)
+find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format-6.0)
 
 if(CLANG_FORMAT_EXECUTABLE)
   message(STATUS "Found clang-format.")
