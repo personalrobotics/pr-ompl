@@ -4,7 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(catkin REQUIRED
   COMPONENTS
   cmake_modules)
-find_package(OMPL REQUIRED)
+find_package(ompl REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread filesystem graph program_options system)
 find_package(Eigen3 REQUIRED)
 
@@ -29,9 +29,9 @@ target_include_directories(pr-ompl-frechet PUBLIC
 )
 
 target_link_libraries(pr-ompl-frechet
-  ${OMPL_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
+                      ${catkin_LIBRARIES}
+                      ${Boost_LIBRARIES}
+                      ${OMPL_LIBRARIES})
 
 #================================================================================
 # Installation
