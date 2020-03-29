@@ -24,7 +24,7 @@ will be added in the future following this convention.
 `pr-ompl` is licensed under a BSD license. See [LICENSE](./LICENSE) for more
 information.
 
-[pr]: https://personalrobotics.ri.cmu.edu/
+[pr]: https://personalrobotics.cs.washington.edu/
 [ompl]: http://ompl.kavrakilab.org/
 [openrave]: http://openrave.org/
 [nnf_paper]: https://personalrobotics.cs.washington.edu/publications/niyaz2018surgicalpath.pdf
