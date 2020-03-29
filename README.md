@@ -2,20 +2,29 @@
 
 A collection of planner implementations for the
 [Open Motion Planning Library][ompl] written by the
-[Personal Robotics Lab][pr], as well as [OpenRAVE][openrave] bindings
-thereof.
+[Personal Robotics Lab][pr].
 
-Currently, this consists of a variant of the RRTConnect planner which
+Currently, this consists of:
+
+* A variant of the RRTConnect planner that
 supports both the EXTEND and CONNECT extension types for each tree (rooted
-at the start(s) and goal(s)) which was written by Chris Dellin
-(<cdellin@gmail.com>).
+at the start(s) and goal(s)), which was written by Chris Dellin
+(<cdellin@gmail.com>). There are also corresponding [OpenRAVE][openrave] 
+bindings.
 
-Once these planners are well-tested, we intend to submit them upstream.
+* An implementation of the NNF (Nearest-Neighbor Fréchet) motion planner,
+which is used to follow end-effector paths (particularly in 
+highly-constrained environments). Please see [this][nnf_paper] paper for more info.
 
-In general, we try to keep the `pr_ompl` package free of dependencies, so it
-is low-cost to pull it in to use one of its simple planners.  Planners with
-dependencies should have their own packages.
+Note that each planner is treated as a separate Catkin package. Additional planners 
+will be added in the future following this convention.
+
+## License
+
+`pr-ompl` is licensed under a BSD license. See [LICENSE](./LICENSE) for more
+information.
 
 [pr]: https://personalrobotics.ri.cmu.edu/
 [ompl]: http://ompl.kavrakilab.org/
 [openrave]: http://openrave.org/
+[nnf_paper]: https://personalrobotics.cs.washington.edu/publications/niyaz2018surgicalpath.pdf
