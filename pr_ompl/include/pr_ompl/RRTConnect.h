@@ -47,6 +47,7 @@
 
 #include <ompl/geometric/planners/PlannerIncludes.h>
 #include <ompl/datastructures/NearestNeighbors.h>
+ #include "ompl/util/Exception.h"
 
 namespace pr_ompl {
 
@@ -108,6 +109,21 @@ public:
     {
         return ext_types_;
     }
+
+    void setGoalSamplingProbability(double prob)
+    {
+        if( prob < 0.0 || prob > 1.0)
+        {
+            throw ompl::Exception("Goal sampling probability must be between [0, 1]");
+        }
+
+        goalSamplingProbability_ = prob;
+    }
+
+    double getGoalSamplingProbability(void) const
+    {
+        return goalSamplingProbability_;
+    } 
 
     /** \brief Set a different nearest neighbors datastructure */
     template<template<typename T> class NN>
@@ -195,6 +211,9 @@ protected:
 
     /** \brief The maximum length of a motion to be added to a tree */
     double                        maxDistance_;
+
+    /** \brief The goal sampling probability value */
+    double                        goalSamplingProbability_;
     
     std::pair<enum ExtensionType,enum ExtensionType> ext_types_;
 

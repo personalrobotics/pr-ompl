@@ -46,6 +46,8 @@
 #include <ompl/base/goals/GoalSampleableRegion.h>
 #include <ompl/tools/config/SelfConfig.h>
 
+ #include <random>
+
 using namespace ompl;
 using namespace ompl::geometric;
 
@@ -67,6 +69,12 @@ pr_ompl::RRTConnect::RRTConnect(const base::SpaceInformationPtr &si) : base::Pla
         &RRTConnect::getExtensionTypesString,
         "con-con,con-ext,ext-con,ext-ext"
     );
+
+    Planner::declareParam<double>("goal_sampling_probability", this,
+        &RRTConnect::setGoalSamplingProbability,
+        &RRTConnect::getGoalSamplingProbability,
+        "0.0:0.01:1.0");
+
     connectionPoint_ = std::make_pair<base::State*, base::State*>(NULL, NULL);
 }
 
@@ -260,6 +268,12 @@ ompl::base::PlannerStatus pr_ompl::RRTConnect::solve(const base::PlannerTerminat
     bool startTree      = true;
     bool solved         = false;
 
+    // Random generation objects for goal sampling probability
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0,1);
+
+
     while (ptc == false)
     {
         TreeData &tree      = startTree ? tStart_ : tGoal_;
@@ -267,13 +281,18 @@ ompl::base::PlannerStatus pr_ompl::RRTConnect::solve(const base::PlannerTerminat
         startTree = !startTree;
         TreeData &otherTree = startTree ? tStart_ : tGoal_;
 
-        if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
+
+        /* Sample random number in [0,1] to determine if goal sampling needed */
+        double goalSampleDraw = dis(gen);
+
+        /* If draw less than goal sampling probability, sample goals */
+        if(tGoal_->size() == 0 || goalSampleDraw <= goalSamplingProbability_)
         {
             const base::State *st = tGoal_->size() == 0 ? pis_.nextGoal(ptc) : pis_.nextGoal();
             if (st)
             {
                 Motion* motion = new Motion(si_);
-                si_->copyState(motion->state, st);
+                si_->copyState(motion->state,st);
                 motion->root = motion->state;
                 tGoal_->add(motion);
             }
